@@ -30,19 +30,9 @@ body {
 }
 
 #clickBtn:active { animation: shake 0.1s infinite; transform: translateY(6px); box-shadow: 0 4px 0 #154360; }
-
-/* --- SISTEM RANK & AURA --- */
 .aura-overlord { animation: shake 0.2s infinite !important; background: #4b0082 !important; border-color: #8e44ad !important; }
 .aura-mythical { animation: rainbow 2s infinite linear !important; border: 2px solid gold !important; }
 .aura-divine { animation: divineRGB 1.5s infinite linear !important; border: 4px solid white !important; }
-
-/* Rank Teragung (The Untouchable) - DITAMBAH */
-.aura-beyond { 
-    animation: divineRGB 0.5s infinite linear !important; 
-    border: 6px double white !important; 
-    box-shadow: 0 0 40px #9b59b6, inset 0 0 20px #ffffff !important; 
-}
-.text-beyond { animation: goldenGlow 1s infinite ease-in-out; font-weight: 900; font-size: 2.2rem; }
 .text-divine-gold { animation: goldenGlow 2s infinite ease-in-out; display: inline-block; }
 
 .particle { position: absolute; pointer-events: none; font-weight: 900; font-size: 2rem; color: #ffffff; text-shadow: 0 0 10px #00ecff; animation: floatUp 0.7s forwards; z-index: 1000; }
@@ -52,7 +42,7 @@ body {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: radial-gradient(circle, #1a1a1a 0%, #000 100%); 
     display: flex; flex-direction: column; justify-content: center; align-items: center; 
-    z-index: 10000; text-align: center;
+    z-index: 100; text-align: center;
 }
 
 .game-logo { font-size: 3rem; font-weight: 900; color: #00ecff; animation: pulse 2s infinite; margin-bottom: 20px; }
@@ -82,4 +72,20 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 #displayPlayerName:hover {
     text-shadow: 0 0 10px #00ecff;
     opacity: 0.8;
-           }
+}
+
+/* AURA RANK BARU AZFAR */
+.aura-beyond { 
+    animation: divineRGB 0.8s infinite linear !important; 
+    border: 6px double #9b59b6 !important; 
+    box-shadow: 0 0 30px #9b59b6, inset 0 0 15px #ffffff !important; 
+}
+
+.text-beyond { 
+    animation: goldenGlow 1s infinite ease-in-out !important; 
+    font-weight: 900 !important; 
+    text-transform: uppercase;
+}
+
+/* Penyelarasan untuk container supaya tidak lari bila tambah aura */
+.container { transition: all 0.5s ease; }
