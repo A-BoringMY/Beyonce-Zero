@@ -1,292 +1,117 @@
-// 1. KAWALAN VERSI (Tukar nombor ni kalau nak reset semua orang lagi)
-const CURRENT_VERSION = "1.1"; 
-
+const CURRENT_VERSION = "1.2"; 
 let playerName = ""; 
-let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 500, rebirths = 0, diaReward = 1, autoClickers = 0, diamondFarms = 0, musicStarted = false, endingReached = false;
+let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 1000, rebirths = 0, diaReward = 1, autoClickers = 0, diamondFarms = 0, musicStarted = false, endingReached = false;
 let itemPower = 0; 
-let inventory = { sword: false, wand: false, glove: false, pickaxe: false, drill: false }; 
+let inventory = { sword: false, glove: false, laser: false, quantum: false }; 
 
-const SAVE_KEY = 'BeyondZero_Official_V7';
+const SAVE_KEY = 'BeyondZero_Final_Extreme';
 
 window.onload = function() {
-    // 2. SISTEM PEMBERSIH (Reset jika versi tak sama)
-    let installedVersion = localStorage.getItem('game_version');
-    if (installedVersion !== CURRENT_VERSION) {
-        localStorage.clear(); 
-        localStorage.setItem('game_version', CURRENT_VERSION);
-        alert("Game Updated! Semua data telah di-reset untuk permulaan yang adil.");
-        location.reload(); 
-        return; 
+    let ver = localStorage.getItem('game_ver');
+    if (ver !== CURRENT_VERSION) {
+        localStorage.clear();
+        localStorage.setItem('game_ver', CURRENT_VERSION);
     }
-
-    // 3. LOAD DATA
-    try {
-        let saved = JSON.parse(localStorage.getItem(SAVE_KEY));
-        if (saved && saved.playerName) {
-            playerName = saved.playerName;
-            clicks = Number(saved.clicks) || 0;
-            diamonds = Number(saved.diamonds) || 0;
-            basePower = Number(saved.basePower) || 1;
-            itemPower = Number(saved.itemPower) || 0;
-            rebirths = Number(saved.rebirths) || 0;
-            diaReward = Number(saved.diaReward) || 1;
-            autoClickers = Number(saved.autoClickers) || 0;
-            diamondFarms = Number(saved.diamondFarms) || 0;
-            endingReached = saved.endingReached || false;
-            if(saved.inventory) inventory = saved.inventory;
-
-            document.getElementById('startOverlay').style.display = 'none';
-        } else {
-            document.getElementById('startOverlay').style.display = 'flex';
-        }
-    } catch (e) {
-        document.getElementById('startOverlay').style.display = 'flex';
+    let saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (saved) {
+        playerName = saved.playerName || ""; 
+        clicks = Number(saved.clicks) || 0;
+        diamonds = Number(saved.diamonds) || 0;
+        itemPower = Number(saved.itemPower) || 0;
+        rebirths = Number(saved.rebirths) || 0;
+        autoClickers = Number(saved.autoClickers) || 0;
+        diamondFarms = Number(saved.diamondFarms) || 0;
+        endingReached = saved.endingReached || false;
+        if(saved.inventory) inventory = saved.inventory;
+        if (playerName !== "") document.getElementById('startOverlay').style.display = 'none';
     }
-    updatePower();
-    updateUI();
-    updateLeaderboard(); 
+    updatePower(); updateUI();
 };
-
-// --- FUNGSI GAME ---
 
 function startGame() { 
     let input = document.getElementById('playerNameInput');
-    let nameValue = input ? input.value.trim() : "";
-    
-    if (nameValue === "") {
-        alert("Sila masukkan nama anda untuk bermula!");
-        return;
+    playerName = (input && input.value.trim() !== "") ? input.value.trim().substring(0,12) : "HERO";
+
+    // KOD RAHSIA
+    if(playerName === "AzfarAdmin") {
+        rebirths = 100; diamonds += 999999999999;
+        alert("WELCOME CREATOR! 👑");
+    } else if(playerName.toLowerCase() === "ayam") {
+        rebirths = 50; diamonds += 1000000;
+        alert("CHICKEN MODE 🐥");
     }
 
-    playerName = nameValue.substring(0, 12);
     document.getElementById('startOverlay').style.display = 'none';
-    musicStarted = true; 
-    manageBGM();
-    updateUI();
-    save(); 
+    musicStarted = true; manageBGM();
+    updatePower(); updateUI(); save(); 
 }
 
 function doClick(e) {
-    let finalPower = clickPower;
-    let isCrit = false;
-    if (inventory.glove && Math.random() < 0.10) { 
-        finalPower = clickPower * 5;
-        isCrit = true;
-    }
+    let crit = (inventory.glove && Math.random() < 0.15);
+    let mult = crit ? (inventory.quantum ? 10 : 5) : 1;
+    let finalPower = clickPower * mult;
     clicks += finalPower;
-    checkEnding();
+    if (rebirths >= 100 && !endingReached) {
+        endingReached = true;
+        document.getElementById('endingOverlay').style.display = 'flex';
+    }
     let sfx = document.getElementById('sfxClick');
     if(sfx) { sfx.currentTime = 0; sfx.play().catch(()=>{}); }
-    createParticle(e, finalPower, isCrit); 
+    createParticle(e, finalPower, crit); 
     updateUI();
 }
 
 function updatePower() {
-    let rebirthMult = Math.pow(5, rebirths); 
-    clickPower = (basePower + itemPower) * rebirthMult;
-    if (rebirths === 0) { rebirthCost = 500; } 
-    else { rebirthCost = clickPower * 250; }
+    clickPower = (1 + itemPower) * Math.pow(8, rebirths);
+    rebirthCost = 1000 * Math.pow(10, rebirths);
 }
 
 function updateUI() {
-    safeSetText('clicks', formatNum(clicks));
-    safeSetText('diamonds', formatNum(diamonds));
-    safeSetText('rebirthCost', formatNum(rebirthCost));
-    safeSetText('rebirthCount', rebirths);
-    safeSetText('autoSpeed', formatNum(autoClickers));
-    safeSetText('clickPwr', formatNum(clickPower));
-    
-    let nameDisplay = document.getElementById('nameText');
-    if(nameDisplay) nameDisplay.innerText = (playerName || "HERO").toUpperCase();
+    document.getElementById('clicks').innerText = formatNum(clicks);
+    document.getElementById('diamonds').innerText = formatNum(diamonds);
+    document.getElementById('rebirthCost').innerText = formatNum(rebirthCost);
+    document.getElementById('rebirthCount').innerText = rebirths;
+    document.getElementById('clickPwr').innerText = formatNum(clickPower);
+    document.getElementById('nameText').innerText = (playerName || "HERO").toUpperCase();
 
     let radio = document.querySelector('input[name="buyAmt"]:checked');
     let a = radio ? Number(radio.value) : 1;
+    document.getElementById('autoCostDisplay').innerText = formatNum(a) + "💎";
+    document.getElementById('farmCostDisplay').innerText = formatNum(a * 5) + "💎";
     
-    safeSetText('autoCostDisplay', formatNum(a) + "💎");
-    safeSetText('farmCostDisplay', formatNum(a * 5) + "💎");
-    
+    // RANK SYSTEM
     const title = document.getElementById('rankTitle');
     const container = document.getElementById('mainGame');
-    if (container && title) {
-        container.classList.remove('aura-overlord', 'aura-mythical', 'aura-divine');
-        if(rebirths < 10) title.innerText = "NOOB";
-        else if(rebirths < 30) { title.innerText = "OVERLORD"; container.classList.add('aura-overlord'); }
-        else if(rebirths < 60) { title.innerText = "MYTHICAL GOD"; container.classList.add('aura-mythical'); }
-        else { title.innerText = "DIVINE ENTITY"; container.classList.add('aura-divine'); }
-    }
-    
-    if(document.getElementById('rebirthBtn')) document.getElementById('rebirthBtn').disabled = (clicks < rebirthCost);
-    updateEquipmentButton('buySword', 'sword', 50);
-    updateEquipmentButton('buyWand', 'wand', 500);
-    updateEquipmentButton('buyGlove', 'glove', 2500);
-    updateEquipmentButton('buyPickaxe', 'pickaxe', 10000);
-    updateEquipmentButton('buyDrill', 'drill', 100000);
+    container.className = "container"; title.className = "";
+    if(rebirths < 3) title.innerText = "NOOB";
+    else if(rebirths < 8) title.innerText = "WARRIOR";
+    else if(rebirths < 15) title.innerText = "ELITE";
+    else if(rebirths < 25) { title.innerText = "OVERLORD"; container.classList.add('aura-overlord'); }
+    else if(rebirths < 40) { title.innerText = "MYTHICAL"; container.classList.add('aura-mythical'); }
+    else if(rebirths < 60) { title.innerText = "DIVINE"; container.classList.add('aura-divine'); }
+    else if(rebirths < 85) { title.innerText = "BEYOND DIVINE"; container.classList.add('aura-beyond'); }
+    else { title.innerText = "THE UNTOUCHABLE"; title.classList.add('text-beyond'); container.classList.add('aura-beyond'); }
+
+    document.getElementById('rebirthBtn').disabled = (clicks < rebirthCost);
+    updateEqBtn('buySword', 'sword', 50);
+    updateEqBtn('buyGlove', 'glove', 2500);
+    updateEqBtn('buyLaser', 'laser', 500000);
+    updateEqBtn('buyQuantum', 'quantum', 10000000);
 }
 
-function safeSetText(id, txt) {
-    let el = document.getElementById(id);
-    if(el) el.innerText = txt;
-}
-
-function updateEquipmentButton(id, key, cost) {
+function updateEqBtn(id, key, cost) {
     const btn = document.getElementById(id);
-    if (!btn) return;
-    if (inventory[key]) {
-        btn.innerHTML = "<span>SOLD OUT</span> <span>OWNED</span>";
-        btn.style.background = "#444";
-        btn.disabled = true;
-    } else {
-        btn.disabled = (diamonds < cost);
-    }
+    if (inventory[key]) { btn.innerHTML = "<span>MAXED</span>"; btn.disabled = true; }
+    else { btn.disabled = (diamonds < cost); }
 }
 
 function doRebirth() { 
     if (clicks >= rebirthCost) { 
-        clicks = 0; rebirths++; 
-        diamonds += diaReward;
-        diaReward *= 3; 
+        clicks = 0; rebirths++; diamonds += (rebirths * 100);
         updatePower(); updateUI(); save(); 
     } 
 }
 
 function buyAuto() { 
-    let radio = document.querySelector('input[name="buyAmt"]:checked');
-    let a = radio ? Number(radio.value) : 1;
-    if (diamonds >= a) { 
-        diamonds -= a; 
-        autoClickers += (a * (rebirths + 1)); 
-        updateUI(); save(); 
-    } 
-}
 
-function buyFarm() { 
-    let radio = document.querySelector('input[name="buyAmt"]:checked');
-    let a = radio ? Number(radio.value) : 1;
-    let cost = a * 5;
-    if (diamonds >= cost) { 
-        diamonds -= cost; 
-        diamondFarms += (a * (rebirths + 1)); 
-        updateUI(); save(); 
-    } 
-}
-
-function buyItem(type, cost, pwrAdd) {
-    if (inventory[type]) return;
-    if (diamonds >= cost) {
-        diamonds -= cost; 
-        inventory[type] = true;
-        itemPower += pwrAdd; 
-        updatePower(); updateUI(); save();
-    }
-}
-
-function formatNum(num) {
-    if (num >= 1e42) return (num / 1e42).toFixed(2) + "Td";
-    if (num >= 1e39) return (num / 1e39).toFixed(2) + "Dd";
-    if (num >= 1e36) return (num / 1e36).toFixed(2) + "Ud";
-    if (num >= 1e33) return (num / 1e33).toFixed(2) + "Dc";
-    if (num >= 1e30) return (num / 1e30).toFixed(2) + "No";
-    if (num >= 1e27) return (num / 1e27).toFixed(2) + "Oc";
-    if (num >= 1e24) return (num / 1e24).toFixed(2) + "Sp";
-    if (num >= 1e21) return (num / 1e21).toFixed(2) + "Sx";
-    if (num >= 1e18) return (num / 1e18).toFixed(2) + "Qi";
-    if (num >= 1e15) return (num / 1e15).toFixed(2) + "Q";
-    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
-    if (num >= 1e3) return (num / 1e3).toFixed(2) + "k";
-    return Math.floor(num).toString();
-}
-
-function createParticle(e, amount, isCrit) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.innerText = (isCrit ? "CRIT! +" : "+") + formatNum(amount);
-    if (isCrit) {
-        p.style.color = "#f1c40f"; p.style.fontSize = "1.5rem";
-        p.style.fontWeight = "900";
-    }
-    let x = (e && e.clientX) || window.innerWidth/2;
-    let y = (e && e.clientY) || window.innerHeight/2;
-    p.style.left = x + "px"; p.style.top = y + "px";
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 700);
-}
-
-function checkEnding() {
-    if (clicks >= 1e42 && !endingReached) { 
-        endingReached = true;
-        document.getElementById('endingOverlay').style.display = 'flex';
-        save();
-    }
-}
-
-function closeEnding() { document.getElementById('endingOverlay').style.display = 'none'; }
-
-function manageBGM() {
-    if (!musicStarted) return;
-    let music = document.getElementById('bgMusic');
-    if (music) { music.volume = 0.4; music.play().catch(()=>{}); }
-}
-
-function save() {
-    const data = { 
-        playerName, clicks, diamonds, basePower, itemPower, rebirths, 
-        diaReward, autoClickers, diamondFarms, endingReached, inventory 
-    };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-}
-
-function resetGame() {
-    if(confirm("Padam semua progress?")) {
-        localStorage.removeItem(SAVE_KEY);
-        location.reload();
-    }
-}
-
-setInterval(() => { 
-    if (autoClickers > 0) { 
-        clicks += (autoClickers / 10); 
-        checkEnding(); 
-        updateUI(); 
-    } 
-}, 100);
-
-setInterval(() => { 
-    if (diamondFarms > 0) { 
-        diamonds += diamondFarms; 
-        updateUI(); 
-    } 
-}, 10000); 
-
-setInterval(save, 5000);
-
-function updateLeaderboard() {
-    const listEl = document.getElementById('leaderboard-list');
-    if (!listEl) return;
-    let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
-    let allPlayers = [{ name: myName, baseScore: clicks, r: rebirths }];
-    allPlayers.sort((a, b) => b.baseScore - a.baseScore);
-    listEl.innerHTML = "";
-    allPlayers.forEach((player, index) => {
-        let isMe = player.name === myName;
-        listEl.innerHTML += `
-            <div class="${isMe ? 'me' : ''}">
-                <span>#${index + 1} ${player.name} <small>[R:${player.r}]</small></span>
-                <span>${formatNum(player.baseScore)}</span>
-            </div>
-        `;
-    });
-}
-setInterval(updateLeaderboard, 3000);
-
-function changeNameInline() {
-    let newName = prompt("Masukkan nama baharu anda:", playerName);
-    if (newName !== null && newName.trim() !== "") {
-        playerName = newName.trim().substring(0, 12);
-        save();
-        updateUI();
-        updateLeaderboard();
-    }
-                               }
-            
+        
