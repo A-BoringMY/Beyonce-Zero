@@ -1,12 +1,25 @@
+// 1. KAWALAN VERSI (Tukar nombor ni kalau nak reset semua orang lagi)
+const CURRENT_VERSION = "1.1"; 
+
 let playerName = ""; 
 let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 500, rebirths = 0, diaReward = 1, autoClickers = 0, diamondFarms = 0, musicStarted = false, endingReached = false;
 let itemPower = 0; 
 let inventory = { sword: false, wand: false, glove: false, pickaxe: false, drill: false }; 
 
-// 1. TUKAR NAMA SAVE (Penting: Gunakan V7 supaya data lama 48Dc tu hilang)
 const SAVE_KEY = 'BeyondZero_Official_V7';
 
 window.onload = function() {
+    // 2. SISTEM PEMBERSIH (Reset jika versi tak sama)
+    let installedVersion = localStorage.getItem('game_version');
+    if (installedVersion !== CURRENT_VERSION) {
+        localStorage.clear(); 
+        localStorage.setItem('game_version', CURRENT_VERSION);
+        alert("Game Updated! Semua data telah di-reset untuk permulaan yang adil.");
+        location.reload(); 
+        return; 
+    }
+
+    // 3. LOAD DATA
     try {
         let saved = JSON.parse(localStorage.getItem(SAVE_KEY));
         if (saved && saved.playerName) {
@@ -22,11 +35,8 @@ window.onload = function() {
             endingReached = saved.endingReached || false;
             if(saved.inventory) inventory = saved.inventory;
 
-            // Kalau dah ada save yang sah, sorok skrin mula
             document.getElementById('startOverlay').style.display = 'none';
         } else {
-            // Jika tiada save, pastikan semua nilai bermula dari 0
-            resetToZero();
             document.getElementById('startOverlay').style.display = 'flex';
         }
     } catch (e) {
@@ -37,17 +47,12 @@ window.onload = function() {
     updateLeaderboard(); 
 };
 
-// Fungsi untuk pastikan nilai betul-betul kosong bagi pemain baru
-function resetToZero() {
-    clicks = 0; diamonds = 0; rebirths = 0; basePower = 1; itemPower = 0;
-    autoClickers = 0; diamondFarms = 0;
-}
+// --- FUNGSI GAME ---
 
 function startGame() { 
     let input = document.getElementById('playerNameInput');
     let nameValue = input ? input.value.trim() : "";
     
-    // 2. WAJIBKAN NAMA (Supaya tak pening siapa yang main)
     if (nameValue === "") {
         alert("Sila masukkan nama anda untuk bermula!");
         return;
@@ -55,7 +60,6 @@ function startGame() {
 
     playerName = nameValue.substring(0, 12);
     document.getElementById('startOverlay').style.display = 'none';
-    
     musicStarted = true; 
     manageBGM();
     updateUI();
@@ -261,7 +265,6 @@ function updateLeaderboard() {
     const listEl = document.getElementById('leaderboard-list');
     if (!listEl) return;
     let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
-    // Bot dikosongkan untuk permulaan yang adil
     let allPlayers = [{ name: myName, baseScore: clicks, r: rebirths }];
     allPlayers.sort((a, b) => b.baseScore - a.baseScore);
     listEl.innerHTML = "";
@@ -285,5 +288,5 @@ function changeNameInline() {
         updateUI();
         updateLeaderboard();
     }
-                }
-    
+                               }
+            
