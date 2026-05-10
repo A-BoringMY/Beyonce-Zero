@@ -3,6 +3,9 @@ let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 0, re
 let itemPower = 0; 
 let inventory = { sword: false, wand: false, glove: false }; 
 
+// KOSONGKAN BOT (Supaya leaderboard bersih)
+let bots = []; 
+
 window.onload = function() {
     try {
         let saved = JSON.parse(localStorage.getItem('dolaFinalSaveV5'));
@@ -41,7 +44,7 @@ function startGame() {
     if (overlay) overlay.style.display = 'none';
     musicStarted = true; 
     manageBGM();
-    updateUI(); // Pastikan UI update nama sebaik saja start
+    updateUI(); 
     save(); 
 }
 
@@ -75,7 +78,6 @@ function updateUI() {
     safeSetText('autoSpeed', formatNum(autoClickers));
     safeSetText('clickPwr', formatNum(clickPower));
     
-    // PAPARKAN NAMA PEMAIN
     let nameDisplay = document.getElementById('nameText');
     if(nameDisplay) nameDisplay.innerText = (playerName || "HERO").toUpperCase();
 
@@ -233,7 +235,6 @@ function resetGame() {
     }
 }
 
-// AUTO CLICKER
 setInterval(() => { 
     if (autoClickers > 0) { 
         clicks += (autoClickers / 10); 
@@ -242,7 +243,6 @@ setInterval(() => {
     } 
 }, 100);
 
-// DIAMOND FARM
 setInterval(() => { 
     if (diamondFarms > 0) { 
         diamonds += diamondFarms; 
@@ -251,13 +251,6 @@ setInterval(() => {
 }, 10000); 
 
 setInterval(save, 5000);
-
-let bots = [
-    { name: "Aiman_Gamer", baseScore: 500000, r: 2 },
-    { name: "Siti_Clicker", baseScore: 5000000, r: 5 },
-    { name: "Zack_Divine", baseScore: 1000000000000, r: 15 }, 
-    { name: "Dola_Master", baseScore: 1000000000000000, r: 25 }
-];
 
 function updateLeaderboard() {
     const listEl = document.getElementById('leaderboard-list');
@@ -286,4 +279,5 @@ function changeNameInline() {
         updateUI();
         updateLeaderboard();
     }
-}
+        }
+        
