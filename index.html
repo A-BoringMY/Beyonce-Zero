@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- ENDING OVERLAY (Hanya keluar bila 100 Rebirth) -->
 <div id="endingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; color:gold; z-index:9999; flex-direction:column; justify-content:center; align-items:center; text-align:center; border: 10px double gold;">
     <h1 style="font-size: 3rem; margin-bottom: 10px;">THE UNTOUCHABLE</h1>
     <p style="font-size: 1.2rem; color: #fff;">Anda telah menguasai seluruh dimensi Beyond Zero.</p>
@@ -18,11 +17,11 @@
 </div>
 
 <div id="startOverlay">
-    <div class="game-logo">Beyond Zero<span>EXTREME UPDATE</span></div>
+    <div class="game-logo">Beyond Zero<span>EXTREME</span></div>
     <div id="nameInputSection">
         <input type="text" id="playerNameInput" placeholder="MASUKKAN NAMA ANDA" maxlength="12">
     </div>
-    <button class="start-btn" id="mainStartBtn" onclick="startGame()">START GAME</button>
+    <button class="start-btn" onclick="startGame()">START GAME</button>
 </div>
 
 <div class="container" id="mainGame">
@@ -34,7 +33,7 @@
     <div class="stats">
         <div>Clicks: <span id="clicks">0</span></div>
         <div>Diamonds: <span id="diamonds" style="color: #00ecff;">0</span></div>
-        <div style="font-size: 0.8rem; color: #2ecc71; margin-top:5px;">Auto Speed: <span id="autoSpeed">0</span>/s</div>
+        <div style="font-size: 0.8rem; color: #2ecc71; margin-top:5px;">Click Power: <span id="clickPwr">0</span></div>
         <div style="font-size: 0.7rem; opacity: 0.5;">Rebirths: <span id="rebirthCount">0</span>/100</div>
     </div>
 
@@ -45,26 +44,22 @@
     </div>
 
     <div class="section">
-        <h3 style="font-size:0.8rem; margin:0 0 10px 0; color:#00ecff;">AUTOMATION</h3>
         <div class="buy-selector">
             <label><input type="radio" name="buyAmt" value="1" checked onchange="updateUI()"> <span>x1</span></label>
             <label><input type="radio" name="buyAmt" value="100" onchange="updateUI()"> <span>x100</span></label>
-            <label><input type="radio" name="buyAmt" value="100000" onchange="updateUI()"> <span>x100k</span></label>
-            <label><input type="radio" name="buyAmt" value="1000000" onchange="updateUI()"> <span>x1M</span></label>
+            <label><input type="radio" name="buyAmt" value="10000" onchange="updateUI()"> <span>x10k</span></label>
         </div>
         <button class="shop-btn" id="buyAuto" onclick="buyAuto()"><span>Auto Clicker</span> <span id="autoCostDisplay">1💎</span></button>
         <button class="shop-btn" id="buyFarm" onclick="buyFarm()" style="background: #2980b9; margin-top: 5px;"><span>Diamond Farm</span> <span id="farmCostDisplay">5💎</span></button>
     </div>
 
     <div class="section" style="background: #1e272e; border: 1px solid #f1c40f;">
-        <h3 style="font-size:0.8rem; margin:0 0 10px 0; color:#f1c40f;">ULTRA EQUIPMENT</h3>
-        <button class="shop-btn" id="buySword" onclick="buyItem('sword', 50, 10)" style="background: #c0392b;"><span>Slayer Sword (+10)</span> <span>50💎</span></button>
-        <button class="shop-btn" id="buyGlove" onclick="buyItem('glove', 2500, 0)" style="background: #e67e22; margin-top: 5px;"><span>Critical Glove (15% Crit)</span> <span>2.5k💎</span></button>
-        <button class="shop-btn" id="buyLaser" onclick="buyItem('laser', 500000, 100000)" style="background: #e74c3c; margin-top: 5px;"><span>Laser Drill (+100k)</span> <span>500k💎</span></button>
-        <button class="shop-btn" id="buyQuantum" onclick="buyItem('quantum', 10000000, 1000000)" style="background: #9b59b6; margin-top: 5px;"><span>Quantum Click (Crit x10)</span> <span>10M💎</span></button>
+        <h3 style="font-size:0.7rem; margin:0 0 5px 0; color:#f1c40f;">EQUIPMENT</h3>
+        <button class="shop-btn" id="buySword" onclick="buyItem('sword', 50, 10)" style="background: #c0392b;"><span>Slayer Sword</span> <span>50💎</span></button>
+        <button class="shop-btn" id="buyGlove" onclick="buyItem('glove', 2500, 50)" style="background: #e67e22; margin-top: 5px;"><span>Critical Glove</span> <span>2.5k💎</span></button>
+        <button class="shop-btn" id="buyLaser" onclick="buyItem('laser', 500000, 10000)" style="background: #e74c3c; margin-top: 5px;"><span>Laser Drill</span> <span>500k💎</span></button>
+        <button class="shop-btn" id="buyQuantum" onclick="buyItem('quantum', 10000000, 100000)" style="background: #9b59b6; margin-top: 5px;"><span>Quantum Click</span> <span>10M💎</span></button>
     </div>
-
-    <div style="margin-top: 30px; opacity: 0.3; font-size: 0.6rem;">Developed by Azfar 1A3 | Ver 1.2</div>
 </div>
 
 <audio id="bgMusic" src="bg-low.mp3" loop>
@@ -72,5 +67,5 @@
 
 <script src="script.js"></script>
 </body>
-                                                                                            </html>
+</html>
     
