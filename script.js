@@ -4,6 +4,16 @@ let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 0, re
 let itemPower = 0; 
 let inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
 // ==========================================
+// 1. ID UNIK PERANTI (ELAK DUPLICATE FIREBASE)
+// ==========================================
+let playerId = localStorage.getItem('myGamePlayerId');
+if (!playerId) {
+    // Jika belum ada ID, buat satu ID unik berasaskan masa
+    playerId = 'player_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    localStorage.setItem('myGamePlayerId', playerId);
+}
+
+// ==========================================
 // SYSTEM VARIABLES & FIREBASE VERSION LISTENER
 // ==========================================
 let GAME_VERSION = "v1.0.0"; // Versi lalai (default)
@@ -414,20 +424,28 @@ function changeNameInline() {
             return;
         }
 
-        // 4. PERINTAH ADMIN: Tukar Version Game
-        else if (isAdminMode && code.toUpperCase().startsWith("SETVER")) {
-            let newVer = code.replace(/SETVER/i, "").trim();
-            if (newVer !== "") {
-                GAME_VERSION = newVer;
-                // Simpan ke Firebase supaya semua akaun pemain lain automatik dikemaskini
-                db.ref('gameConfig/version').set(newVer);
-                alert("✅ Version berjaya ditukar kepada: " + newVer);
-                updateUI();
-            } else {
-                alert("⚠️ Sila masukkan nombor versi! Contoh: SETVER v1.0.6");
-            }
-            return;
+        // PERINTAH ADMIN: Tukar Version Game
+else if (isAdminMode && code.toUpperCase().startsWith("SETVER")) {
+    let newVer = code.replace(/SETVER/i, "").trim();
+    if (newVer !== "") {
+        GAME_VERSION = newVer;
+        
+        // 1. Simpan versi ke Firebase
+        db.ref('gameConfig/version').set(newVer);
+        
+        alert("✅ Version berjaya ditukar kepada: " + newVer);
+        
+        // 2. Refresh UI dan Leaderboard untuk paparan versi baru
+        updateUI();
+        if (typeof updateLeaderboard === 'function') {
+            updateLeaderboard();
         }
+    } else {
+        alert("⚠️ Sila masukkan nombor versi! Contoh: SETVER v1.0.6");
+    }
+    return;
+}
+
 
         // 5. PERINTAH ADMIN: Tutup Admin
         else if (code.toUpperCase() === "EXITADMIN") {
@@ -452,13 +470,11 @@ function changeNameInline() {
 }
 
 
+// Menghasilkan ID Season dinamik berasaskan Version (contoh: "season_v1_0_6")
 function getCurrentSeasonID() {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const pastDaysOfYear = (now - startOfYear) / 86400000;
-    const weekNumber = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
-    return `${now.getFullYear()}-W${weekNumber}`;
+    return 'season_' + GAME_VERSION.replace(/\./g, '_');
 }
+
 
 function openFullLeaderboard() {
     const modal = document.getElementById('fullLeaderboardModal');
@@ -573,3 +589,17 @@ function adminCleanInactive(days) {
         if (typeof updateLeaderboard === 'function') updateLeaderboard();
     });
 }
+
+// CONTOH CARA SIMPAN DATA YANG BETUL:
+function savePlayerData() {
+    const season = getCurrentSeasonID();
+    
+    // Gunakan playerId di hujung path ini dan guna .set()
+    db.ref(`leaderboards/${season}/${playerId}`).set({
+        name: playerName,
+        rebirths: rebirths,
+        clicks: clicks,
+        updatedAt: Date.now()
+    });
+}
+
