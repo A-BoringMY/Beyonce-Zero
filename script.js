@@ -93,6 +93,67 @@ function loadGameData() {
 
     // Semak sama ada pemain sudah ada nama atau belum
     const nameSection = document.getElementById('nameInputSection');
+window.onload = function() {
+    db.ref('gameConfig/version').once('value').then((snapshot) => {
+        let serverVersion = snapshot.val();
+        if (serverVersion) {
+            GAME_VERSION = serverVersion;
+        }
+        isFirebaseVersionReady = true;
+        loadGameData();
+    }).catch((err) => {
+        console.log("Firebase load version error:", err);
+        isFirebaseVersionReady = true;
+        loadGameData();
+    });
+
+    db.ref('gameConfig/version').on('value', (snapshot) => {
+        let serverVersion = snapshot.val();
+        if (serverVersion && serverVersion !== GAME_VERSION) {
+            GAME_VERSION = serverVersion;
+            if (isFirebaseVersionReady) {
+                loadGameData();
+            }
+        }
+    });
+};
+
+function loadGameData() {
+    const currentSeason = getCurrentSeasonID();
+    let savedSeason = localStorage.getItem('activeSeason');
+    let saved = JSON.parse(localStorage.getItem('dolaFinalSaveV5'));
+
+    if (savedSeason && savedSeason !== currentSeason) {
+        let oldName = saved ? saved.playerName : "";
+        localStorage.clear();
+        localStorage.setItem('myGamePlayerId', playerId);
+        localStorage.setItem('activeSeason', currentSeason);
+        
+        clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
+        diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
+        inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
+        
+        if (oldName !== "") playerName = oldName;
+        alert(`🏆 SEASON BAHARU!\n\nSeason lama (${savedSeason.replace('_', ' - ')}) telah tamat.\nSelamat bertanding dalam ${currentSeason.replace('_', ' - ')}!`);
+    } else {
+        if (!savedSeason) localStorage.setItem('activeSeason', currentSeason);
+        if (saved) {
+            playerName = saved.playerName || ""; 
+            clicks = Number(saved.clicks) || 0;
+            diamonds = Number(saved.diamonds) || 0;
+            basePower = Number(saved.basePower) || 1;
+            itemPower = Number(saved.itemPower) || 0;
+            rebirths = Number(saved.rebirths) || 0;
+            diaReward = Number(saved.diaReward) || 1;
+            autoClickers = Number(saved.autoClickers) || 0;
+            diamondFarms = Number(saved.diamondFarms) || 0;
+            endingReached = saved.endingReached || false;
+            if (saved.inventory) inventory = saved.inventory;
+        }
+    }
+
+    // Semak sama ada pemain sudah ada nama atau belum
+    const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
             nameSection.style.display = 'none';
