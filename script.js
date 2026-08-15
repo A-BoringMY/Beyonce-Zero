@@ -95,10 +95,10 @@ function loadGameData() {
             endingReached = saved.endingReached || false;
             if (saved.inventory) inventory = saved.inventory;
 
-            // === OFFLINE PROGRESS (PENGIRAAN SEWAKTU TIADA DALAM GAME) ===
+            // === OFFLINE PROGRESS ===
             if (saved.lastTime) {
                 let secondsOffline = Math.floor((Date.now() - saved.lastTime) / 1000);
-                if (secondsOffline > 43200) secondsOffline = 43200; // Maksimum 12 jam
+                if (secondsOffline > 43200) secondsOffline = 43200; // Max 12 jam
 
                 if (secondsOffline > 10) {
                     let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
@@ -141,8 +141,7 @@ function startGame() {
         }
         playerName = input.value.trim().substring(0, 12);
     } else {
-        let sfx = document.getElementById('sfxClick');
-        if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
+        playSFX('sfxClick');
     }
 
     const overlay = document.getElementById('startOverlay');
@@ -152,6 +151,15 @@ function startGame() {
     playRandomBGM();
     updateUI(); 
     save(); 
+}
+
+// Fungsi audio pantas tanpa lag
+function playSFX(id) {
+    let sfx = document.getElementById(id);
+    if (sfx) {
+        sfx.currentTime = 0;
+        sfx.play().catch(() => {});
+    }
 }
 
 function doClick(e) {
@@ -164,8 +172,7 @@ function doClick(e) {
     clicks += finalPower;
     checkEnding();
     
-    let sfx = document.getElementById('sfxClick');
-    if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
+    playSFX('sfxClick');
     
     createParticle(e, finalPower, isCrit); 
     updateUI();
@@ -256,8 +263,7 @@ function updateEquipmentButton(id, key, cost) {
 
 function doRebirth() { 
     if (clicks >= rebirthCost) { 
-        let sfx = document.getElementById('sfxRebirth');
-        if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
+        playSFX('sfxRebirth');
 
         clicks = 0; 
         diamonds = 0; 
@@ -281,8 +287,7 @@ function buyAuto() {
         updateUI(); 
         save(); 
     } 
-    let sfx = document.getElementById('sfxBuy');
-    if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
+    playSFX('sfxBuy');
 }
 
 function buyFarm() { 
@@ -295,15 +300,13 @@ function buyFarm() {
         updateUI(); 
         save(); 
     } 
-    let sfx = document.getElementById('sfxBuy');
-    if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
+    playSFX('sfxBuy');
 }
 
 function buyItem(type, cost, pwrAdd) {
     if (inventory[type]) return;
     if (diamonds >= cost) {
-        let sfx = document.getElementById('sfxBuy');
-        if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
+        playSFX('sfxBuy');
         diamonds -= cost; 
         inventory[type] = true;
         itemPower += pwrAdd;
@@ -549,7 +552,7 @@ function adminCleanInactive(days) {
     });
 }
 
-// === FUNGSI MUZIK (DENGAN RE-LOAD UNTUK ELAK LOOP LAGU SAMA) ===
+// === FUNGSI MUZIK RAWAK (RINGAN & STABIL) ===
 function playRandomBGM() {
     let music = document.getElementById('bgMusic');
     if (!music || !musicStarted) return;
@@ -564,12 +567,8 @@ function playRandomBGM() {
     }
 
     lastPlayedIndex = randomIndex;
-    
-    music.pause();
     music.src = bgmList[randomIndex];
-    music.load(); 
     music.volume = 0.3;
-
     music.play().catch(e => console.log("Audio play error:", e));
 }
 
