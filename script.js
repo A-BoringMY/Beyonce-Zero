@@ -153,7 +153,10 @@ function updateUI() {
     safeSetText('rebirthCount', rebirths);
     safeSetText('autoSpeed', formatNum(autoClickers));
     safeSetText('clickPwr', formatNum(clickPower));
-    safeSetText('seasonBadge', getCurrentSeasonID().replace('_', ' ') + ' | VER: ' + GAME_VERSION);
+    
+    // Formatkan ejaan '2026_W34' menjadi '2026 - W34' khas untuk paparan sahaja
+    let displaySeason = getCurrentSeasonID().replace('_', ' - ');
+    safeSetText('seasonBadge', 'SEASON: ' + displaySeason + ' | VER: ' + GAME_VERSION);
 
     let nameDisplay = document.getElementById('nameText');
     if (nameDisplay) nameDisplay.innerText = (playerName || "HERO").toUpperCase();
@@ -563,3 +566,15 @@ setInterval(() => {
         save(); 
     }
 }, 2000);
+
+function getCurrentSeasonID() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    // Tetapkan tarikh ke hari Khamis terdekat (standard ISO week)
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    // Kira nombor minggu
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    
+    return `${d.getFullYear()}_W${weekNo}`;
+}
