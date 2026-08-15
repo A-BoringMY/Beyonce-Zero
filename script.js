@@ -138,6 +138,31 @@ function loadGameData() {
     if (typeof updateLeaderboard === 'function') updateLeaderboard();
 }
 
+// Letak di bahagian bawah loadGameData()
+if (saved && saved.lastTime) {
+    let now = Date.now();
+    let secondsOffline = Math.floor((now - saved.lastTime) / 1000);
+    
+    // Hadkan maksimum offline (contoh: maksimum 12 jam / 43,200 saat)
+    if (secondsOffline > 43200) secondsOffline = 43200; 
+
+    if (secondsOffline > 10) { // Hanya bagi jika tinggalkan game lebih 10 saat
+        // Kira hasil automatik semasa offline
+        let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
+        let offlineDiamonds = Math.floor((diamondFarms * 0.2) * (secondsOffline / 4));
+
+        clicks += offlineClicks;
+        diamonds += offlineDiamonds;
+
+        // Beritahu pemain bila mereka buka game balik
+        setTimeout(() => {
+            alert(`🌙 SELAMAT KEMBALI!\n\nSemasa anda tiada (${Math.floor(secondsOffline/60)} minit):\n+ ${formatNum(offlineClicks)} Clicks\n+ ${formatNum(offlineDiamonds)} Diamonds`);
+            updateUI();
+        }, 500);
+    }
+}
+
+
 function startGame() { 
     let input = document.getElementById('playerNameInput');
     const nameSection = document.getElementById('nameInputSection');
@@ -369,11 +394,13 @@ function closeEnding() {
 function save() {
     const data = { 
         playerName, clicks, diamonds, basePower, itemPower, rebirthCost, rebirths, 
-        diaReward, autoClickers, diamondFarms, endingReached, inventory 
+        diaReward, autoClickers, diamondFarms, endingReached, inventory,
+        lastTime: Date.now() // <--- Simpan masa terkini semasa save
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
     saveToGlobalLeaderboard();
 }
+
 
 function resetGame() {
     if (confirm("Padam semua progress akaun INI? (Akaun lain tidak akan terjejas)")) {
@@ -561,6 +588,7 @@ function playRandomBGM() {
     if (!music || !musicStarted) return;
 
     let randomIndex;
+    // Cari lagu baharu yang BUKAN lagu sama yang baru habis diputar
     if (bgmList.length > 1) {
         do {
             randomIndex = Math.floor(Math.random() * bgmList.length);
@@ -572,37 +600,21 @@ function playRandomBGM() {
     lastPlayedIndex = randomIndex;
     music.src = bgmList[randomIndex];
     music.volume = 0.3;
+
+    // Pastikan lagu dimainkan
     music.play().catch(e => console.log("Audio play error:", e));
 }
 
+// Apabila lagu habis, automatik panggil playRandomBGM() untuk lagu SETERUSNYA
 document.addEventListener("DOMContentLoaded", () => {
     let music = document.getElementById('bgMusic');
     if (music) {
-        music.addEventListener('ended', playRandomBGM);
+        // Buang fungsi bertindih jika ada
+        music.onended = null; 
+        
+        // Pasang pengesan lagu habis yang pasti tukar lagu
+        music.addEventListener('ended', () => {
+            playRandomBGM();
+        });
     }
-});
-
-setInterval(() => { 
-    if (autoClickers > 0) { 
-        clicks += (autoClickers / 10); 
-        checkEnding(); 
-        updateUI(); 
-    } 
-}, 100);
-
-setInterval(() => { 
-    if (diamondFarms > 0) { 
-        let rebirthBonus = 1 + Math.log10(rebirths + 1); 
-        let totalGained = Math.floor((diamondFarms * 0.5) * rebirthBonus); 
-        if (totalGained < 1) totalGained = 1;
-
-        diamonds += totalGained; 
-        updateUI(); 
-    } 
-}, 4000);
-
-setInterval(() => {
-    if (musicStarted || clicks > 0) {
-        save(); 
-    }
-}, 2000);
+})
