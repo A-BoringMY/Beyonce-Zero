@@ -21,8 +21,15 @@ const bgmList = [
 ];
 let lastPlayedIndex = -1;
 
+// === FUNGSI SEASON AUTOMATIK (Satu-satunya dalam fail) ===
 function getCurrentSeasonID() {
-    return 'Minggu_' + GAME_VERSION.replace(/[^a-zA-Z0-9]/g, '_');
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    
+    return `${d.getFullYear()}_W${weekNo}`;
 }
 
 window.onload = function() {
@@ -66,7 +73,7 @@ function loadGameData() {
         inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
         
         if (oldName !== "") playerName = oldName;
-        alert(`🏆 MINGGU / SEASON BAHARU!\n\nSeason lama (${savedSeason.replace('_', ' ')}) telah tamat.\nSelamat bertanding dalam ${currentSeason.replace('_', ' ')}!`);
+        alert(`🏆 SEASON BAHARU!\n\nSeason lama (${savedSeason.replace('_', ' - ')}) telah tamat.\nSelamat bertanding dalam ${currentSeason.replace('_', ' - ')}!`);
     } else {
         if (!savedSeason) localStorage.setItem('activeSeason', currentSeason);
         if (saved) {
@@ -154,7 +161,7 @@ function updateUI() {
     safeSetText('autoSpeed', formatNum(autoClickers));
     safeSetText('clickPwr', formatNum(clickPower));
     
-    // Formatkan ejaan '2026_W34' menjadi '2026 - W34' khas untuk paparan sahaja
+    // Paparan Season "2026 - W33" di UI
     let displaySeason = getCurrentSeasonID().replace('_', ' - ');
     safeSetText('seasonBadge', 'SEASON: ' + displaySeason + ' | VER: ' + GAME_VERSION);
 
@@ -566,15 +573,3 @@ setInterval(() => {
         save(); 
     }
 }, 2000);
-
-function getCurrentSeasonID() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    // Tetapkan tarikh ke hari Khamis terdekat (standard ISO week)
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    // Kira nombor minggu
-    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    
-    return `${d.getFullYear()}_W${weekNo}`;
-}
