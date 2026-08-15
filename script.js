@@ -11,7 +11,6 @@ let inventory = { sword: false, wand: false, glove: false, laser: false, quantum
 
 let GAME_VERSION = "v1.0.1";
 let isAdminMode = false;
-let isFirebaseVersionReady = false;
 
 const bgmList = [
     "wet-hand.mp3",
@@ -33,30 +32,62 @@ function getCurrentSeasonID() {
 }
 
 window.onload = function() {
-    // 1. Muatkan data tempatan serta-merta supaya game buka serta-merta tanpa delay
+    // 1. Muatkan data permainan tempatan
     loadGameData();
 
-    // 2. Semak versi Firebase di latar belakang
-    db.ref('gameConfig/version').once('value').then((snapshot) => {
-        let serverVersion = snapshot.val();
-        if (serverVersion) {
-            GAME_VERSION = serverVersion;
-            updateUI();
-        }
-        isFirebaseVersionReady = true;
-    }).catch((err) => {
-        console.log("Firebase load version error:", err);
-        isFirebaseVersionReady = true;
-    });
+    // 2. Hubungi Firebase dan tunggu pengesahan sebelum memadamkan skrin loading (Mencegah Flicker/Stuck)
+    let versionCheckFinished = false;
 
-    db.ref('gameConfig/version').on('value', (snapshot) => {
-        let serverVersion = snapshot.val();
-        if (serverVersion && serverVersion !== GAME_VERSION) {
-            GAME_VERSION = serverVersion;
-            updateUI();
+    // Tetapkan tempoh masa maksimum (Timeout) jika Firebase perlahan/offline
+    let fallbackTimeout = setTimeout(() => {
+        if (!versionCheckFinished) {
+            versionCheckFinished = true;
+            hideLoadingScreen();
         }
-    });
+    }, 2000); // Maksimum 2 saat
+
+    if (typeof db !== 'undefined') {
+        db.ref('gameConfig/version').once('value').then((snapshot) => {
+            let serverVersion = snapshot.val();
+            if (serverVersion) {
+                GAME_VERSION = serverVersion;
+            }
+            updateUI();
+        }).catch((err) => {
+            console.log("Firebase load version error:", err);
+        }).finally(() => {
+            if (!versionCheckFinished) {
+                versionCheckFinished = true;
+                clearTimeout(fallbackTimeout);
+                hideLoadingScreen();
+            }
+        });
+
+        // Dengar kemaskini versi semasa bermain
+        db.ref('gameConfig/version').on('value', (snapshot) => {
+            let serverVersion = snapshot.val();
+            if (serverVersion && serverVersion !== GAME_VERSION) {
+                GAME_VERSION = serverVersion;
+                updateUI();
+            }
+        });
+    } else {
+        // Jika Firebase tiada
+        clearTimeout(fallbackTimeout);
+        hideLoadingScreen();
+    }
 };
+
+function hideLoadingScreen() {
+    const loader = document.getElementById('gameLoadingOverlay');
+    if (loader) {
+        loader.style.transition = "opacity 0.3s ease";
+        loader.style.opacity = "0";
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 300);
+    }
+}
 
 function loadGameData() {
     const currentSeason = getCurrentSeasonID();
@@ -92,7 +123,7 @@ function loadGameData() {
         }
     }
 
-    // Semak sama ada pemain sudah ada nama atau belum
+    // Semak status ruang nama
     const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
@@ -105,14 +136,6 @@ function loadGameData() {
     updatePower();
     updateUI();
     if (typeof updateLeaderboard === 'function') updateLeaderboard();
-
-    // Padam Loading Screen secara terus (0.05 saat sahaja)
-    setTimeout(() => {
-        const loader = document.getElementById('gameLoadingOverlay');
-        if (loader) {
-            loader.style.display = 'none';
-        }
-    }, 50);
 }
 
 function startGame() { 
@@ -355,7 +378,7 @@ function save() {
 function resetGame() {
     if (confirm("Padam semua progress akaun INI? (Akaun lain tidak akan terjejas)")) {
         const currentSeason = getCurrentSeasonID();
-        if (playerId) {
+        if (playerId && typeof db !== 'undefined') {
             db.ref(`leaderboards/${currentSeason}/` + playerId).remove();
         }
         localStorage.clear();
@@ -364,6 +387,7 @@ function resetGame() {
 }
 
 function saveToGlobalLeaderboard() {
+    if (typeof db === 'undefined') return;
     let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
     const currentSeason = getCurrentSeasonID();
     
@@ -378,7 +402,7 @@ function saveToGlobalLeaderboard() {
 
 function updateLeaderboard() {
     const listEl = document.getElementById('leaderboard-list');
-    if (!listEl) return;
+    if (!listEl || typeof db === 'undefined') return;
 
     const currentSeason = getCurrentSeasonID();
     db.ref(`leaderboards/${currentSeason}`).orderByChild('clicks').limitToLast(10).on('value', (snapshot) => {
@@ -419,7 +443,7 @@ function closeFullLeaderboard() {
 
 function loadFullLeaderboard() {
     const listEl = document.getElementById('fullLeaderboardList');
-    if (!listEl) return;
+    if (!listEl || typeof db === 'undefined') return;
 
     const currentSeason = getCurrentSeasonID();
     db.ref(`leaderboards/${currentSeason}`).orderByChild('clicks').limitToLast(100).once('value', (snapshot) => {
@@ -485,7 +509,7 @@ function changeNameInline() {
         }
         else if (isAdminMode && code.toUpperCase().startsWith("SETVER")) {
             let newVer = code.replace(/SETVER/i, "").trim();
-            if (newVer !== "") {
+            if (newVer !== "" && typeof db !== 'undefined') {
                 GAME_VERSION = newVer;
                 db.ref('gameConfig/version').set(newVer);
                 alert("✅ Version berjaya ditukar kepada: " + newVer);
@@ -515,7 +539,7 @@ function changeNameInline() {
 }
 
 function adminCleanInactive(days) {
-    if (!isAdminMode) return;
+    if (!isAdminMode || typeof db === 'undefined') return;
     
     const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
     const season = getCurrentSeasonID();
