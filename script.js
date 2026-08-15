@@ -32,38 +32,18 @@ function getCurrentSeasonID() {
 }
 
 window.onload = function() {
-    // 1. Muatkan data permainan tempatan
     loadGameData();
-
-    // 2. Hubungi Firebase dan tunggu pengesahan sebelum memadamkan skrin loading (Mencegah Flicker/Stuck)
-    let versionCheckFinished = false;
-
-    // Tetapkan tempoh masa maksimum (Timeout) jika Firebase perlahan/offline
-    let fallbackTimeout = setTimeout(() => {
-        if (!versionCheckFinished) {
-            versionCheckFinished = true;
-            hideLoadingScreen();
-        }
-    }, 2000); // Maksimum 2 saat
+    hideLoadingScreen();
 
     if (typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
             if (serverVersion) {
                 GAME_VERSION = serverVersion;
+                updateUI();
             }
-            updateUI();
-        }).catch((err) => {
-            console.log("Firebase load version error:", err);
-        }).finally(() => {
-            if (!versionCheckFinished) {
-                versionCheckFinished = true;
-                clearTimeout(fallbackTimeout);
-                hideLoadingScreen();
-            }
-        });
+        }).catch((err) => console.log("Firebase load version error:", err));
 
-        // Dengar kemaskini versi semasa bermain
         db.ref('gameConfig/version').on('value', (snapshot) => {
             let serverVersion = snapshot.val();
             if (serverVersion && serverVersion !== GAME_VERSION) {
@@ -71,10 +51,6 @@ window.onload = function() {
                 updateUI();
             }
         });
-    } else {
-        // Jika Firebase tiada
-        clearTimeout(fallbackTimeout);
-        hideLoadingScreen();
     }
 };
 
@@ -83,9 +59,7 @@ function hideLoadingScreen() {
     if (loader) {
         loader.style.transition = "opacity 0.3s ease";
         loader.style.opacity = "0";
-        setTimeout(() => {
-            loader.style.display = 'none';
-        }, 300);
+        setTimeout(() => { loader.style.display = 'none'; }, 300);
     }
 }
 
@@ -120,10 +94,28 @@ function loadGameData() {
             diamondFarms = Number(saved.diamondFarms) || 0;
             endingReached = saved.endingReached || false;
             if (saved.inventory) inventory = saved.inventory;
+
+            // === OFFLINE PROGRESS (PENGIRAAN SEWAKTU TIADA DALAM GAME) ===
+            if (saved.lastTime) {
+                let secondsOffline = Math.floor((Date.now() - saved.lastTime) / 1000);
+                if (secondsOffline > 43200) secondsOffline = 43200; // Maksimum 12 jam
+
+                if (secondsOffline > 10) {
+                    let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
+                    let offlineDiamonds = Math.floor((diamondFarms * 0.2) * (secondsOffline / 4));
+
+                    clicks += offlineClicks;
+                    diamonds += offlineDiamonds;
+
+                    setTimeout(() => {
+                        alert(`🌙 SELAMAT KEMBALI!\n\nSemasa anda tiada (${Math.floor(secondsOffline/60)} minit):\n+ ${formatNum(offlineClicks)} Clicks\n+ ${formatNum(offlineDiamonds)} Diamonds`);
+                        updateUI();
+                    }, 500);
+                }
+            }
         }
     }
 
-    // Semak status ruang nama
     const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
@@ -137,31 +129,6 @@ function loadGameData() {
     updateUI();
     if (typeof updateLeaderboard === 'function') updateLeaderboard();
 }
-
-// Letak di bahagian bawah loadGameData()
-if (saved && saved.lastTime) {
-    let now = Date.now();
-    let secondsOffline = Math.floor((now - saved.lastTime) / 1000);
-    
-    // Hadkan maksimum offline (contoh: maksimum 12 jam / 43,200 saat)
-    if (secondsOffline > 43200) secondsOffline = 43200; 
-
-    if (secondsOffline > 10) { // Hanya bagi jika tinggalkan game lebih 10 saat
-        // Kira hasil automatik semasa offline
-        let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
-        let offlineDiamonds = Math.floor((diamondFarms * 0.2) * (secondsOffline / 4));
-
-        clicks += offlineClicks;
-        diamonds += offlineDiamonds;
-
-        // Beritahu pemain bila mereka buka game balik
-        setTimeout(() => {
-            alert(`🌙 SELAMAT KEMBALI!\n\nSemasa anda tiada (${Math.floor(secondsOffline/60)} minit):\n+ ${formatNum(offlineClicks)} Clicks\n+ ${formatNum(offlineDiamonds)} Diamonds`);
-            updateUI();
-        }, 500);
-    }
-}
-
 
 function startGame() { 
     let input = document.getElementById('playerNameInput');
@@ -395,12 +362,11 @@ function save() {
     const data = { 
         playerName, clicks, diamonds, basePower, itemPower, rebirthCost, rebirths, 
         diaReward, autoClickers, diamondFarms, endingReached, inventory,
-        lastTime: Date.now() // <--- Simpan masa terkini semasa save
+        lastTime: Date.now() 
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
     saveToGlobalLeaderboard();
 }
-
 
 function resetGame() {
     if (confirm("Padam semua progress akaun INI? (Akaun lain tidak akan terjejas)")) {
@@ -583,12 +549,12 @@ function adminCleanInactive(days) {
     });
 }
 
+// === FUNGSI MUZIK (DENGAN RE-LOAD UNTUK ELAK LOOP LAGU SAMA) ===
 function playRandomBGM() {
     let music = document.getElementById('bgMusic');
     if (!music || !musicStarted) return;
 
     let randomIndex;
-    // Cari lagu baharu yang BUKAN lagu sama yang baru habis diputar
     if (bgmList.length > 1) {
         do {
             randomIndex = Math.floor(Math.random() * bgmList.length);
@@ -598,23 +564,46 @@ function playRandomBGM() {
     }
 
     lastPlayedIndex = randomIndex;
+    
+    music.pause();
     music.src = bgmList[randomIndex];
+    music.load(); 
     music.volume = 0.3;
 
-    // Pastikan lagu dimainkan
     music.play().catch(e => console.log("Audio play error:", e));
 }
 
-// Apabila lagu habis, automatik panggil playRandomBGM() untuk lagu SETERUSNYA
 document.addEventListener("DOMContentLoaded", () => {
     let music = document.getElementById('bgMusic');
     if (music) {
-        // Buang fungsi bertindih jika ada
-        music.onended = null; 
-        
-        // Pasang pengesan lagu habis yang pasti tukar lagu
-        music.addEventListener('ended', () => {
+        music.onended = function() {
             playRandomBGM();
-        });
+        };
     }
-})
+});
+
+// === TIMERS AUTOMATIK (AUTO-CLICKER, FARM & SAVE) ===
+setInterval(() => { 
+    if (autoClickers > 0) { 
+        clicks += (autoClickers / 10); 
+        checkEnding(); 
+        updateUI(); 
+    } 
+}, 100);
+
+setInterval(() => { 
+    if (diamondFarms > 0) { 
+        let rebirthBonus = 1 + Math.log10(rebirths + 1); 
+        let totalGained = Math.floor((diamondFarms * 0.5) * rebirthBonus); 
+        if (totalGained < 1) totalGained = 1;
+
+        diamonds += totalGained; 
+        updateUI(); 
+    } 
+}, 4000);
+
+setInterval(() => {
+    if (musicStarted || clicks > 0) {
+        save(); 
+    }
+}, 2000);
