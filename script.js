@@ -9,17 +9,9 @@ let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 0, re
 let itemPower = 0; 
 let inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
 
-let GAME_VERSION = "v1.0.0";
+let GAME_VERSION = "v1.0.1";
 let isAdminMode = false;
-
-db.ref('gameConfig/version').on('value', (snapshot) => {
-    let serverVersion = snapshot.val();
-    if (serverVersion) {
-        GAME_VERSION = serverVersion;
-        if (typeof updateUI === 'function') updateUI();
-        if (typeof updateLeaderboard === 'function') updateLeaderboard();
-    }
-});
+let isFirebaseVersionReady = false;
 
 const bgmList = [
     "wet-hand.mp3",
@@ -30,71 +22,95 @@ const bgmList = [
 let lastPlayedIndex = -1;
 
 function getCurrentSeasonID() {
-    return 'season_' + GAME_VERSION.replace(/\./g, '_');
+    return 'Minggu_' + GAME_VERSION.replace(/[^a-zA-Z0-9]/g, '_');
 }
 
 window.onload = function() {
+    db.ref('gameConfig/version').once('value').then((snapshot) => {
+        let serverVersion = snapshot.val();
+        if (serverVersion) {
+            GAME_VERSION = serverVersion;
+        }
+        isFirebaseVersionReady = true;
+        loadGameData();
+    }).catch((err) => {
+        console.log("Firebase load version error:", err);
+        isFirebaseVersionReady = true;
+        loadGameData();
+    });
+
+    db.ref('gameConfig/version').on('value', (snapshot) => {
+        let serverVersion = snapshot.val();
+        if (serverVersion && serverVersion !== GAME_VERSION) {
+            GAME_VERSION = serverVersion;
+            if (isFirebaseVersionReady) {
+                loadGameData();
+            }
+        }
+    });
+};
+
+function loadGameData() {
     const currentSeason = getCurrentSeasonID();
-    
-    try {
-        let savedSeason = localStorage.getItem('activeSeason');
+    let savedSeason = localStorage.getItem('activeSeason');
+    let saved = JSON.parse(localStorage.getItem('dolaFinalSaveV5'));
+
+    if (savedSeason && savedSeason !== currentSeason) {
+        let oldName = saved ? saved.playerName : "";
+        localStorage.clear();
+        localStorage.setItem('myGamePlayerId', playerId);
+        localStorage.setItem('activeSeason', currentSeason);
         
-        if (savedSeason !== currentSeason) {
-            let oldData = JSON.parse(localStorage.getItem('dolaFinalSaveV5'));
-            if (savedSeason) {
-                alert(`🏆 SEASON BAHARU SELESAI!\nSeason lama (${savedSeason}) telah tamat.\nSelamat bertanding dalam ${currentSeason}!`);
-            }
-            
-            let oldName = oldData ? oldData.playerName : "";
-            localStorage.clear();
-            localStorage.setItem('myGamePlayerId', playerId);
-            localStorage.setItem('activeSeason', currentSeason);
-            
-            if (oldName !== "") {
-                playerName = oldName;
-            }
+        clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
+        diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
+        inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
+        
+        if (oldName !== "") playerName = oldName;
+        alert(`🏆 MINGGU / SEASON BAHARU!\n\nSeason lama (${savedSeason.replace('_', ' ')}) telah tamat.\nSelamat bertanding dalam ${currentSeason.replace('_', ' ')}!`);
+    } else {
+        if (!savedSeason) localStorage.setItem('activeSeason', currentSeason);
+        if (saved) {
+            playerName = saved.playerName || ""; 
+            clicks = Number(saved.clicks) || 0;
+            diamonds = Number(saved.diamonds) || 0;
+            basePower = Number(saved.basePower) || 1;
+            itemPower = Number(saved.itemPower) || 0;
+            rebirths = Number(saved.rebirths) || 0;
+            diaReward = Number(saved.diaReward) || 1;
+            autoClickers = Number(saved.autoClickers) || 0;
+            diamondFarms = Number(saved.diamondFarms) || 0;
+            endingReached = saved.endingReached || false;
+            if (saved.inventory) inventory = saved.inventory;
+        }
+    }
+
+    const nameSection = document.getElementById('nameInputSection');
+    if (nameSection) {
+        if (playerName && playerName.trim() !== "") {
+            nameSection.style.display = 'none';
         } else {
-            let saved = JSON.parse(localStorage.getItem('dolaFinalSaveV5'));
-            if (saved) {
-                playerName = saved.playerName || ""; 
-                clicks = Number(saved.clicks) || 0;
-                diamonds = Number(saved.diamonds) || 0;
-                basePower = Number(saved.basePower) || 1;
-                itemPower = Number(saved.itemPower) || 0;
-                rebirths = Number(saved.rebirths) || 0;
-                diaReward = Number(saved.diaReward) || 1;
-                autoClickers = Number(saved.autoClickers) || 0;
-                diamondFarms = Number(saved.diamondFarms) || 0;
-                endingReached = saved.endingReached || false;
-                if (saved.inventory) inventory = saved.inventory;
-            }
+            nameSection.style.display = 'block';
         }
-        
-        if (playerName !== "") {
-            const nameSection = document.getElementById('nameInputSection');
-            if (nameSection) nameSection.style.display = 'none';
-        }
-    } catch (e) {
-        console.log("Load error.", e);
     }
 
     updatePower();
     updateUI();
-    updateLeaderboard(); 
-};
+    if (typeof updateLeaderboard === 'function') updateLeaderboard();
+}
 
 function startGame() { 
     let input = document.getElementById('playerNameInput');
+    const nameSection = document.getElementById('nameInputSection');
     
-    if (document.getElementById('nameInputSection').style.display === 'none') {
-        let sfx = document.getElementById('sfxClick');
-        if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
-    } else {
+    if (nameSection && nameSection.style.display !== 'none') {
         if (!input || input.value.trim() === "") {
             alert("SILA MASUKKAN NAMA ANDA TERLEBIH DAHULU!");
             return;
         }
         playerName = input.value.trim().substring(0, 12);
+    } else {
+        let sfx = document.getElementById('sfxClick');
+        if (sfx) { sfx.currentTime = 0; sfx.play().catch(() => {}); }
     }
 
     const overlay = document.getElementById('startOverlay');
@@ -137,7 +153,7 @@ function updateUI() {
     safeSetText('rebirthCount', rebirths);
     safeSetText('autoSpeed', formatNum(autoClickers));
     safeSetText('clickPwr', formatNum(clickPower));
-    safeSetText('seasonBadge', 'SEASON: ' + getCurrentSeasonID() + ' | VER: ' + GAME_VERSION);
+    safeSetText('seasonBadge', getCurrentSeasonID().replace('_', ' ') + ' | VER: ' + GAME_VERSION);
 
     let nameDisplay = document.getElementById('nameText');
     if (nameDisplay) nameDisplay.innerText = (playerName || "HERO").toUpperCase();
