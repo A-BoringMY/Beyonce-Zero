@@ -91,6 +91,7 @@ function loadGameData() {
         }
     }
 
+    // Semak sama ada pemain sudah ada nama atau belum
     const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
@@ -103,6 +104,16 @@ function loadGameData() {
     updatePower();
     updateUI();
     if (typeof updateLeaderboard === 'function') updateLeaderboard();
+
+    // Selesai semak data & UI -> Tutup Loading Screen dengan sedikit delay halus (500ms)
+    setTimeout(() => {
+        const loader = document.getElementById('gameLoadingOverlay');
+        if (loader) {
+            loader.style.transition = 'opacity 0.3s ease';
+            loader.style.opacity = '0';
+            setTimeout(() => loader.style.display = 'none', 300);
+        }
+    }, 500);
 }
 
 function startGame() { 
