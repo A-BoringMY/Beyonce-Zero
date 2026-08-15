@@ -1,32 +1,23 @@
-let playerId = "";
+let playerId = localStorage.getItem('myGamePlayerId');
+if (!playerId) {
+    playerId = 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('myGamePlayerId', playerId);
+}
+
 let playerName = ""; 
 let clicks = 0, diamonds = 0, clickPower = 1, basePower = 1, rebirthCost = 0, rebirths = 0, diaReward = 1, autoClickers = 0, diamondFarms = 0, musicStarted = false, endingReached = false;
 let itemPower = 0; 
 let inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
-// ==========================================
-// 1. ID UNIK PERANTI (ELAK DUPLICATE FIREBASE)
-// ==========================================
-let playerId = localStorage.getItem('myGamePlayerId');
-if (!playerId) {
-    // Jika belum ada ID, buat satu ID unik berasaskan masa
-    playerId = 'player_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    localStorage.setItem('myGamePlayerId', playerId);
-}
 
-// ==========================================
-// SYSTEM VARIABLES & FIREBASE VERSION LISTENER
-// ==========================================
-let GAME_VERSION = "v1.0.0"; // Versi lalai (default)
-let isAdminMode = false;      // Status mod admin
+let GAME_VERSION = "v1.0.0";
+let isAdminMode = false;
 
-// Ambil Versi terkini secara realtime dari Firebase
 db.ref('gameConfig/version').on('value', (snapshot) => {
     let serverVersion = snapshot.val();
     if (serverVersion) {
         GAME_VERSION = serverVersion;
-        if (typeof updateUI === 'function') {
-            updateUI();
-        }
+        if (typeof updateUI === 'function') updateUI();
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
     }
 });
 
@@ -38,17 +29,11 @@ const bgmList = [
 ];
 let lastPlayedIndex = -1;
 
-function getOrCreatePlayerId() {
-    let id = localStorage.getItem('bz_player_id');
-    if (!id) {
-        id = 'P_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('bz_player_id', id);
-    }
-    return id;
+function getCurrentSeasonID() {
+    return 'season_' + GAME_VERSION.replace(/\./g, '_');
 }
 
 window.onload = function() {
-    playerId = getOrCreatePlayerId();
     const currentSeason = getCurrentSeasonID();
     
     try {
@@ -62,6 +47,7 @@ window.onload = function() {
             
             let oldName = oldData ? oldData.playerName : "";
             localStorage.clear();
+            localStorage.setItem('myGamePlayerId', playerId);
             localStorage.setItem('activeSeason', currentSeason);
             
             if (oldName !== "") {
@@ -343,7 +329,6 @@ function resetGame() {
 }
 
 function saveToGlobalLeaderboard() {
-    if (!playerId) playerId = getOrCreatePlayerId();
     let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
     const currentSeason = getCurrentSeasonID();
     
@@ -385,96 +370,6 @@ function updateLeaderboard() {
         });
     });
 }
-
-function changeNameInline() {
-    let promptMsg = `Masukkan nama baharu atau KOD ADMIN:\n${isAdminMode ? "[ADMIN MODE: ON] - (Taip HELP untuk senarai arahan)" : ""}`;
-    let newName = prompt(promptMsg, playerName);
-    
-    if (newName !== null && newName.trim() !== "") {
-        let code = newName.trim();
-
-        // 1. KOD ADMIN: Aktifkan Admin
-        if (code === "AzfarAdmin") {
-            isAdminMode = true;
-            alert("🛡️ ADMIN MODE AKTIF!\n\nTaip 'HELP' dalam kotak nama untuk lihat semua senarai perintah admin.");
-            return;
-        } 
-        
-        // 2. PERINTAH ADMIN: Menu Bantuan / Help Admin
-        else if (isAdminMode && (code.toUpperCase() === "HELP" || code === "?")) {
-            alert(
-                "=== 🛡️ ADMIN COMMAND MENU 🛡️ ===\n\n" +
-                "1. CLEAN[hari]\n" +
-                "   • Contoh: CLEAN7 atau CLEAN30\n" +
-                "   • Buang akaun tak aktif dari Firebase.\n\n" +
-                "2. SETVER [versi]\n" +
-                "   • Contoh: SETVER v1.0.6\n" +
-                "   • Tukar versi game untuk SEMUA player.\n\n" +
-                "3. EXITADMIN\n" +
-                "   • Matikan Mod Admin keselamatan.\n\n" +
-                "==============================="
-            );
-            return;
-        }
-
-        // 3. PERINTAH ADMIN: Buang Inactive User
-        else if (isAdminMode && code.toUpperCase().startsWith("CLEAN")) {
-            let days = parseInt(code.toUpperCase().replace("CLEAN", "")) || 7;
-            adminCleanInactive(days);
-            return;
-        }
-
-        // PERINTAH ADMIN: Tukar Version Game
-else if (isAdminMode && code.toUpperCase().startsWith("SETVER")) {
-    let newVer = code.replace(/SETVER/i, "").trim();
-    if (newVer !== "") {
-        GAME_VERSION = newVer;
-        
-        // 1. Simpan versi ke Firebase
-        db.ref('gameConfig/version').set(newVer);
-        
-        alert("✅ Version berjaya ditukar kepada: " + newVer);
-        
-        // 2. Refresh UI dan Leaderboard untuk paparan versi baru
-        updateUI();
-        if (typeof updateLeaderboard === 'function') {
-            updateLeaderboard();
-        }
-    } else {
-        alert("⚠️ Sila masukkan nombor versi! Contoh: SETVER v1.0.6");
-    }
-    return;
-}
-
-
-        // 5. PERINTAH ADMIN: Tutup Admin
-        else if (code.toUpperCase() === "EXITADMIN") {
-            isAdminMode = false;
-            alert("🔒 ADMIN MODE DITUTUP.");
-            return;
-        }
-
-        // 6. CHEAT CODE BIASA
-        else if (code === "ayam") {
-            alert("KOK KO KOK! Anda mendapat 50 Rebirths percuma!");
-            rebirths += 50;
-            updatePower();
-        }
-
-        // Tukar nama biasa
-        playerName = code.substring(0, 12);
-        save();
-        updateUI();
-        if (typeof updateLeaderboard === 'function') updateLeaderboard();
-    }
-}
-
-
-// Menghasilkan ID Season dinamik berasaskan Version (contoh: "season_v1_0_6")
-function getCurrentSeasonID() {
-    return 'season_' + GAME_VERSION.replace(/\./g, '_');
-}
-
 
 function openFullLeaderboard() {
     const modal = document.getElementById('fullLeaderboardModal');
@@ -518,6 +413,87 @@ function loadFullLeaderboard() {
                 </div>
             `;
         });
+    });
+}
+
+function changeNameInline() {
+    let promptMsg = `Masukkan nama baharu atau KOD ADMIN:\n${isAdminMode ? "[ADMIN MODE: ON] - (Taip HELP untuk senarai arahan)" : ""}`;
+    let newName = prompt(promptMsg, playerName);
+    
+    if (newName !== null && newName.trim() !== "") {
+        let code = newName.trim();
+
+        if (code === "AzfarAdmin") {
+            isAdminMode = true;
+            alert("🛡️ ADMIN MODE AKTIF!\n\nTaip 'HELP' dalam kotak nama untuk lihat semua senarai perintah admin.");
+            return;
+        } 
+        else if (isAdminMode && (code.toUpperCase() === "HELP" || code === "?")) {
+            alert(
+                "=== 🛡️ ADMIN COMMAND MENU 🛡️ ===\n\n" +
+                "1. CLEAN[hari]\n" +
+                "   • Contoh: CLEAN7 atau CLEAN30\n" +
+                "   • Buang akaun tak aktif dari Firebase.\n\n" +
+                "2. SETVER [versi]\n" +
+                "   • Contoh: SETVER v1.0.6\n" +
+                "   • Tukar versi game untuk SEMUA player.\n\n" +
+                "3. EXITADMIN\n" +
+                "   • Matikan Mod Admin keselamatan.\n\n" +
+                "==============================="
+            );
+            return;
+        }
+        else if (isAdminMode && code.toUpperCase().startsWith("CLEAN")) {
+            let days = parseInt(code.toUpperCase().replace("CLEAN", "")) || 7;
+            adminCleanInactive(days);
+            return;
+        }
+        else if (isAdminMode && code.toUpperCase().startsWith("SETVER")) {
+            let newVer = code.replace(/SETVER/i, "").trim();
+            if (newVer !== "") {
+                GAME_VERSION = newVer;
+                db.ref('gameConfig/version').set(newVer);
+                alert("✅ Version berjaya ditukar kepada: " + newVer);
+                updateUI();
+                if (typeof updateLeaderboard === 'function') updateLeaderboard();
+            } else {
+                alert("⚠️ Sila masukkan nombor versi! Contoh: SETVER v1.0.6");
+            }
+            return;
+        }
+        else if (code.toUpperCase() === "EXITADMIN") {
+            isAdminMode = false;
+            alert("🔒 ADMIN MODE DITUTUP.");
+            return;
+        }
+        else if (code === "ayam") {
+            alert("KOK KO KOK! Anda mendapat 50 Rebirths percuma!");
+            rebirths += 50;
+            updatePower();
+        }
+
+        playerName = code.substring(0, 12);
+        save();
+        updateUI();
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
+    }
+}
+
+function adminCleanInactive(days) {
+    if (!isAdminMode) return;
+    
+    const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+    const season = getCurrentSeasonID();
+    const ref = db.ref(`leaderboards/${season}`);
+
+    ref.orderByChild('updatedAt').endAt(cutoff).once('value', (snapshot) => {
+        let count = 0;
+        snapshot.forEach((child) => {
+            child.ref.remove();
+            count++;
+        });
+        alert(`🧹 SELESAI! ${count} akaun tidak aktif ( > ${days} hari) telah dibuang dari Firebase.`);
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
     });
 }
 
@@ -571,35 +547,3 @@ setInterval(() => {
         save(); 
     }
 }, 2000);
-
-function adminCleanInactive(days) {
-    if (!isAdminMode) return;
-    
-    const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
-    const season = getCurrentSeasonID();
-    const ref = db.ref(`leaderboards/${season}`);
-
-    ref.orderByChild('updatedAt').endAt(cutoff).once('value', (snapshot) => {
-        let count = 0;
-        snapshot.forEach((child) => {
-            child.ref.remove();
-            count++;
-        });
-        alert(`🧹 SELESAI! ${count} akaun tidak aktif ( > ${days} hari) telah dibuang dari Firebase.`);
-        if (typeof updateLeaderboard === 'function') updateLeaderboard();
-    });
-}
-
-// CONTOH CARA SIMPAN DATA YANG BETUL:
-function savePlayerData() {
-    const season = getCurrentSeasonID();
-    
-    // Gunakan playerId di hujung path ini dan guna .set()
-    db.ref(`leaderboards/${season}/${playerId}`).set({
-        name: playerName,
-        rebirths: rebirths,
-        clicks: clicks,
-        updatedAt: Date.now()
-    });
-}
-
