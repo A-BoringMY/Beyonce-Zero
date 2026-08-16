@@ -48,34 +48,48 @@ function getCurrentSeasonID() {
     return `${d.getFullYear()}_W${weekNo}`;
 }
 
-setTimeout(() => {
+function hideLoadingScreen() {
     const loader = document.getElementById('gameLoadingOverlay');
     if (loader && loader.style.display !== 'none') {
-        loader.style.display = 'none';
-        console.warn("Loading dipaksa tutup kerana Firebase terlalu lambat bertindak balas.");
+        loader.style.transition = "opacity 0.3s ease";
+        loader.style.opacity = "0";
+        setTimeout(() => { 
+            loader.style.display = 'none'; 
+        }, 300);
     }
-}, 5000);
+}
 
 window.onload = function() {
-    loadGameData();
-    hideLoadingScreen();
+    // 1. Pelindung Maksimum: Dipaksa padam jika Firebase lambat (3 Saat sahaja)
+    const safetyTimer = setTimeout(() => {
+        console.warn("Loading dipaksa tutup: Pelayan/Firebase lambat.");
+        hideLoadingScreen();
+    }, 3000);
 
-    if (typeof db !== 'undefined') {
-        db.ref('gameConfig/version').once('value').then((snapshot) => {
+    // 2. Muat data tempatan dahulu
+    loadGameData();
+
+    // 3. Semakan Firebase
+    if (typeof db !== 'undefined' && db) {
+        // Guna .on sahaja (tak perlu gabung dengan .once) untuk pantau versi
+        db.ref('gameConfig/version').on('value', (snapshot) => {
             let serverVersion = snapshot.val();
             if (serverVersion) {
                 GAME_VERSION = serverVersion;
-                updateUI();
+                if (typeof updateUI === 'function') updateUI();
             }
-        }).catch((err) => console.log("Firebase load version error:", err));
-
-        db.ref('gameConfig/version').on('value', (snapshot) => {
-            let serverVersion = snapshot.val();
-            if (serverVersion && serverVersion !== GAME_VERSION) {
-                GAME_VERSION = serverVersion;
-                updateUI();
-            }
+            // Padam skrin loading sebaik sahaja Firebase bagi respon
+            clearTimeout(safetyTimer);
+            hideLoadingScreen();
+        }, (err) => {
+            console.log("Firebase load version error:", err);
+            clearTimeout(safetyTimer);
+            hideLoadingScreen();
         });
+    } else {
+        // Jika offline / tiada Firebase, terus tutup loading
+        clearTimeout(safetyTimer);
+        hideLoadingScreen();
     }
 };
 
