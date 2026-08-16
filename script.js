@@ -425,7 +425,7 @@ function updateLeaderboard() {
     if (!listEl || typeof db === 'undefined') return;
 
     const currentSeason = getCurrentSeasonID();
-    db.ref(`leaderboards/${currentSeason}`).orderByChild('clicks').limitToLast(10).on('value', (snapshot) => {
+    db.ref(`leaderboards/${currentSeason}`).orderByChild('clicks').limitToLast(10).once('value', (snapshot) => {
         let players = [];
         snapshot.forEach((childSnapshot) => {
             players.push(childSnapshot.val());
