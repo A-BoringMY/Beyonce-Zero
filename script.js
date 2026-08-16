@@ -12,6 +12,7 @@ let inventory = { sword: false, wand: false, glove: false, laser: false, quantum
 let GAME_VERSION = "v1.0.1";
 let isAdminMode = false;
 let seasonPoints = 0;
+
 let achievements = {
     firstClick: false,
     reach1k: false,
@@ -21,6 +22,15 @@ let achievements = {
     rebirth60: false
 };
 
+const ACHIEVEMENT_LIST = [
+    { id: 'firstClick', name: 'Langkah Pertama', desc: 'Lakukan klik pertama anda', reward: 10 },
+    { id: 'reach1k', name: 'Pemungut Cilik', desc: 'Kumpul 1,000 Clicks', reward: 50 },
+    { id: 'reach1m', name: 'Jutawan Klik', desc: 'Kumpul 1,000,000 Clicks', reward: 500 },
+    { id: 'firstRebirth', name: 'Kelahiran Semula', desc: 'Lakukan Rebirth pertama', reward: 100 },
+    { id: 'rebirth10', name: 'Pemain Tegar', desc: 'Mencapai 10 Rebirths', reward: 1000 },
+    { id: 'rebirth60', name: 'Legenda Bermahkota 👑', desc: 'Mencapai 60 Rebirths (Tamat)', reward: 5000 }
+];
+
 const bgmList = [
     "wet-hand.mp3",
     "minecraft.mp3",
@@ -29,14 +39,12 @@ const bgmList = [
 ];
 let lastPlayedIndex = -1;
 
-// === FUNGSI SEASON AUTOMATIK ===
 function getCurrentSeasonID() {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() + 4 - (d.getDay() || 7));
     const yearStart = new Date(d.getFullYear(), 0, 1);
     const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    
     return `${d.getFullYear()}_W${weekNo}`;
 }
 
@@ -85,6 +93,7 @@ function loadGameData() {
         
         clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
         diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
+        seasonPoints = 0;
         inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
         
         if (oldName !== "") playerName = oldName;
@@ -102,12 +111,13 @@ function loadGameData() {
             autoClickers = Number(saved.autoClickers) || 0;
             diamondFarms = Number(saved.diamondFarms) || 0;
             endingReached = saved.endingReached || false;
+            seasonPoints = Number(saved.seasonPoints) || 0;
             if (saved.inventory) inventory = saved.inventory;
+            if (saved.achievements) achievements = Object.assign(achievements, saved.achievements);
 
-            // === OFFLINE PROGRESS ===
             if (saved.lastTime) {
                 let secondsOffline = Math.floor((Date.now() - saved.lastTime) / 1000);
-                if (secondsOffline > 43200) secondsOffline = 43200; // Max 12 jam
+                if (secondsOffline > 43200) secondsOffline = 43200;
 
                 if (secondsOffline > 10) {
                     let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
@@ -162,7 +172,6 @@ function startGame() {
     save(); 
 }
 
-// Fungsi audio pantas tanpa lag
 function playSFX(id) {
     let sfx = document.getElementById(id);
     if (sfx) {
@@ -179,10 +188,10 @@ function doClick(e) {
         isCrit = true;
     }
     clicks += finalPower;
+    checkAchievements();
     checkEnding();
     
     playSFX('sfxClick');
-    
     createParticle(e, finalPower, isCrit); 
     updateUI();
 }
@@ -201,6 +210,7 @@ function updateUI() {
     safeSetText('rebirthCount', rebirths);
     safeSetText('autoSpeed', formatNum(autoClickers));
     safeSetText('clickPwr', formatNum(clickPower));
+    safeSetText('seasonPointDisplay', formatNum(seasonPoints));
     
     let displaySeason = getCurrentSeasonID().replace('_', ' - ');
     safeSetText('seasonBadge', 'SEASON: ' + displaySeason + ' | VER: ' + GAME_VERSION);
@@ -251,6 +261,8 @@ function updateUI() {
     updateEquipmentButton('buyLaser', 'laser', 50000);
     updateEquipmentButton('buyQuantum', 'quantum', 500000);
     updateEquipmentButton('buyVoid', 'void', 5000000);
+
+    renderAchievements();
 }
 
 function safeSetText(id, txt) {
@@ -281,6 +293,7 @@ function doRebirth() {
         diaReward *= 5; 
         
         updatePower(); 
+        checkAchievements();
         checkEnding(); 
         updateUI(); 
         save(); 
@@ -373,21 +386,10 @@ function closeEnding() {
 function save() {
     const data = { 
         playerName, clicks, diamonds, basePower, itemPower, rebirthCost, rebirths, 
-        diaReward, autoClickers, diamondFarms, endingReached, inventory,
+        diaReward, autoClickers, diamondFarms, endingReached, inventory, seasonPoints, achievements,
         lastTime: Date.now() 
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
-    if (typeof db !== 'undefined' && playerId) {
-        const currentSeason = getCurrentSeasonID();
-        db.ref(`leaderboards/${currentSeason}/${playerId}`).update({
-            name: playerName,
-            clicks: clicks,
-            rebirths: rebirths,
-            seasonPoints: seasonPoints,
-            lastActive: firebase.database.ServerValue.TIMESTAMP
-        });
-    }
-        }
     saveToGlobalLeaderboard();
 }
 
@@ -403,7 +405,7 @@ function resetGame() {
 }
 
 function saveToGlobalLeaderboard() {
-    if (typeof db === 'undefined') return;
+    if (typeof db === 'undefined' || !playerId) return;
     let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
     const currentSeason = getCurrentSeasonID();
     
@@ -412,6 +414,7 @@ function saveToGlobalLeaderboard() {
         name: myName,
         clicks: clicks,
         rebirths: rebirths,
+        seasonPoints: seasonPoints,
         updatedAt: Date.now()
     }).catch(err => console.log("Gagal hantar skor:", err));
 }
@@ -436,9 +439,14 @@ function updateLeaderboard() {
 
         players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
-            // Tambah mahkota jika rebirth 60 atau lebih (tamat game)
             let crown = (player.rebirths >= 60) ? '👑 ' : '';
             
+            // Pengiraan Mata Season secara automatik untuk pemain
+            let pointsEarned = calculateSeasonPoints(index + 1);
+            if (isMe && pointsEarned !== seasonPoints) {
+                seasonPoints = pointsEarned;
+            }
+
             listEl.innerHTML += `
                 <div class="${isMe ? 'me' : ''}">
                     <span>#${index + 1} ${crown}${player.name} <small style="opacity:0.6; font-size:0.65rem;">[R:${player.rebirths || 0}]</small></span>
@@ -448,7 +456,6 @@ function updateLeaderboard() {
         });
     });
 }
-
 
 function openFullLeaderboard() {
     const modal = document.getElementById('fullLeaderboardModal');
@@ -479,9 +486,8 @@ function loadFullLeaderboard() {
             return;
         }
 
-                players.forEach((player, index) => {
+        players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
-            // Tambah mahkota jika rebirth 60 atau lebih
             let crown = (player.rebirths >= 60) ? '👑 ' : '';
 
             listEl.innerHTML += `
@@ -495,7 +501,6 @@ function loadFullLeaderboard() {
                 </div>
             `;
         });
-
     });
 }
 
@@ -507,9 +512,15 @@ function changeNameInline() {
         let code = newName.trim();
 
         if (code === "AzfarAdmin") {
-            isAdminMode = true;
-            alert("🛡️ ADMIN MODE AKTIF!\n\nTaip 'HELP' dalam kotak nama untuk lihat semua senarai perintah admin.");
-            return;
+            let currentNameUpper = playerName ? playerName.toUpperCase() : "";
+            if (currentNameUpper.includes("AZFAR")) {
+                isAdminMode = true;
+                alert("🛡️ ADMIN MODE AKTIF!\n\nTaip 'HELP' dalam kotak nama untuk lihat semua senarai perintah admin.");
+                return;
+            } else {
+                alert("❌ AKSES DITOLAK!\n\nPerintah Admin hanya boleh diakses oleh akaun Azfar sahaja.");
+                return;
+            }
         } 
         else if (isAdminMode && (code.toUpperCase() === "HELP" || code === "?")) {
             alert(
@@ -580,7 +591,6 @@ function adminCleanInactive(days) {
     });
 }
 
-// === FUNGSI MUZIK RAWAK (RINGAN & STABIL) ===
 function playRandomBGM() {
     let music = document.getElementById('bgMusic');
     if (!music || !musicStarted) return;
@@ -609,10 +619,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// === TIMERS AUTOMATIK (AUTO-CLICKER, FARM & SAVE) ===
 setInterval(() => { 
     if (autoClickers > 0) { 
         clicks += (autoClickers / 10); 
+        checkAchievements();
         checkEnding(); 
         updateUI(); 
     } 
@@ -654,11 +664,34 @@ function unlockAchievement(id) {
         updateUI();
         save();
     }
-        }
+}
 
 function calculateSeasonPoints(rank) {
     if (rank >= 1 && rank <= 10) {
         return 11 - rank; 
     }
     return 0;
+}
+
+function renderAchievements() {
+    const container = document.getElementById('achievementsContainer');
+    if (!container) return;
+    
+    container.innerHTML = "";
+    ACHIEVEMENT_LIST.forEach(ach => {
+        const isUnlocked = achievements[ach.id];
+        container.innerHTML += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: ${isUnlocked ? 'rgba(46, 204, 113, 0.15)' : '#111'}; border: 1px solid ${isUnlocked ? '#2ecc71' : '#333'}; padding: 10px; border-radius: 8px; text-align: left;">
+                <div>
+                    <div style="font-weight: bold; color: ${isUnlocked ? '#2ecc71' : '#888'};">
+                        ${isUnlocked ? '✅' : '🔒'} ${ach.name}
+                    </div>
+                    <div style="font-size: 0.75rem; color: #aaa;">${ach.desc}</div>
+                </div>
+                <div style="font-weight: bold; font-size: 0.8rem; color: #f1c40f;">
+                    +${ach.reward} 💎
+                </div>
+            </div>
+        `;
+    });
 }
