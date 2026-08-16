@@ -339,6 +339,7 @@ function buyItem(type, cost, pwrAdd) {
 }
 
 function formatNum(num) {
+    if (isNaN(num) || !isFinite(num) || num >= 1e45) return "MAX";
     if (num >= 1e42) return (num / 1e42).toFixed(2) + "Td";
     if (num >= 1e39) return (num / 1e39).toFixed(2) + "Dd";
     if (num >= 1e36) return (num / 1e36).toFixed(2) + "Ud";
@@ -346,7 +347,7 @@ function formatNum(num) {
     if (num >= 1e30) return (num / 1e30).toFixed(2) + "No";
     if (num >= 1e27) return (num / 1e27).toFixed(2) + "Oc";
     if (num >= 1e24) return (num / 1e24).toFixed(2) + "Sp";
-    if (num >= 1e21) return (num / 1e21).toFixed(2) + "Sx";
+    if (num >= 1e21) return (num / 1e21).toFixed(2)0 + "Sx";
     if (num >= 1e18) return (num / 1e18).toFixed(2) + "Qi";
     if (num >= 1e15) return (num / 1e15).toFixed(2) + "Q";
     if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
@@ -440,8 +441,8 @@ function updateLeaderboard() {
         players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
             let crown = (player.rebirths >= 60) ? '👑 ' : '';
+            let sp = player.seasonPoints || 0;
             
-            // Pengiraan Mata Season secara automatik untuk pemain
             let pointsEarned = calculateSeasonPoints(index + 1);
             if (isMe && pointsEarned !== seasonPoints) {
                 seasonPoints = pointsEarned;
@@ -449,7 +450,7 @@ function updateLeaderboard() {
 
             listEl.innerHTML += `
                 <div class="${isMe ? 'me' : ''}">
-                    <span>#${index + 1} ${crown}${player.name} <small style="opacity:0.6; font-size:0.65rem;">[R:${player.rebirths || 0}]</small></span>
+                    <span>#${index + 1} ${crown}${player.name} <small style="opacity:0.6; font-size:0.65rem;">[R:${player.rebirths || 0} | SP:⭐${sp}]</small></span>
                     <span>${formatNum(player.clicks || 0)}</span>
                 </div>
             `;
@@ -489,14 +490,15 @@ function loadFullLeaderboard() {
         players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
             let crown = (player.rebirths >= 60) ? '👑 ' : '';
+            let sp = player.seasonPoints || 0;
 
             listEl.innerHTML += `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: ${isMe ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)'}; border: ${isMe ? '1px solid #3498db' : 'none'}; border-radius: 6px; font-size: 0.85rem;">
-                    <span style="width: 15%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};">#${index + 1}</span>
-                    <span style="width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};">
+                    <span style="width: 12%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};">#${index + 1}</span>
+                    <span style="width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};">
                         ${crown}${player.name}
                     </span>
-                    <span style="width: 15%; opacity: 0.8; color: #e74c3c;">R:${player.rebirths || 0}</span>
+                    <span style="width: 23%; opacity: 0.85; font-size: 0.7rem; color: #ff793f;">R:${player.rebirths || 0} ⭐${sp}</span>
                     <span style="width: 25%; text-align: right; font-weight: bold; color: #2ecc71;">${formatNum(player.clicks || 0)}</span>
                 </div>
             `;
