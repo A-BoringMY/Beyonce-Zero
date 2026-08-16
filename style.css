@@ -251,3 +251,23 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
     background: #2f3542;
     border-radius: 4px;
 }
+
+/* Bumper Frame/Outline untuk Seksyen Achievements */
+.achievements-section {
+    background: #0d0f12;
+    border: 2px solid #00d2d3; /* Frame outline Cyan senada dengan Leaderboard */
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 0 12px rgba(0, 210, 211, 0.2);
+    margin-top: 10px;
+}
+
+.achievements-section h3 {
+    text-align: center;
+    color: #00d2d3;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    }
+    
