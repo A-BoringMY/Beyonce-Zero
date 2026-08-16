@@ -11,6 +11,15 @@ let inventory = { sword: false, wand: false, glove: false, laser: false, quantum
 
 let GAME_VERSION = "v1.0.1";
 let isAdminMode = false;
+let seasonPoints = 0;
+let achievements = {
+    firstClick: false,
+    reach1k: false,
+    reach1m: false,
+    firstRebirth: false,
+    rebirth10: false,
+    rebirth60: false
+};
 
 const bgmList = [
     "wet-hand.mp3",
@@ -368,6 +377,17 @@ function save() {
         lastTime: Date.now() 
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
+    if (typeof db !== 'undefined' && playerId) {
+        const currentSeason = getCurrentSeasonID();
+        db.ref(`leaderboards/${currentSeason}/${playerId}`).update({
+            name: playerName,
+            clicks: clicks,
+            rebirths: rebirths,
+            seasonPoints: seasonPoints,
+            lastActive: firebase.database.ServerValue.TIMESTAMP
+        });
+    }
+        }
     saveToGlobalLeaderboard();
 }
 
@@ -614,3 +634,31 @@ setInterval(() => {
         save(); 
     }
 }, 2000);
+
+function checkAchievements() {
+    if (clicks >= 1 && !achievements.firstClick) unlockAchievement('firstClick');
+    if (clicks >= 1000 && !achievements.reach1k) unlockAchievement('reach1k');
+    if (clicks >= 1000000 && !achievements.reach1m) unlockAchievement('reach1m');
+    if (rebirths >= 1 && !achievements.firstRebirth) unlockAchievement('firstRebirth');
+    if (rebirths >= 10 && !achievements.rebirth10) unlockAchievement('rebirth10');
+    if (rebirths >= 60 && !achievements.rebirth60) unlockAchievement('rebirth60');
+}
+
+function unlockAchievement(id) {
+    if (achievements[id]) return;
+    achievements[id] = true;
+    const ach = ACHIEVEMENT_LIST.find(a => a.id === id);
+    if (ach) {
+        diamonds += ach.reward;
+        alert(`🏆 PENCAPAIAN DIBUKA!\n\n${ach.name}\n${ach.desc}\n\nGanjaran: +${ach.reward} 💎 Diamonds!`);
+        updateUI();
+        save();
+    }
+        }
+
+function calculateSeasonPoints(rank) {
+    if (rank >= 1 && rank <= 10) {
+        return 11 - rank; 
+    }
+    return 0;
+}
