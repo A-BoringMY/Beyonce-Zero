@@ -48,6 +48,14 @@ function getCurrentSeasonID() {
     return `${d.getFullYear()}_W${weekNo}`;
 }
 
+setTimeout(() => {
+    const loader = document.getElementById('gameLoadingOverlay');
+    if (loader && loader.style.display !== 'none') {
+        loader.style.display = 'none';
+        console.warn("Loading dipaksa tutup kerana Firebase terlalu lambat bertindak balas.");
+    }
+}, 5000);
+
 window.onload = function() {
     loadGameData();
     hideLoadingScreen();
