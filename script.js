@@ -350,7 +350,7 @@ function createParticle(e, amount, isCrit) {
 }
 
 function checkEnding() {
-    if (rebirths >= 85 && !endingReached) { 
+    if (rebirths >= 60 && !endingReached) { 
         endingReached = true;
         document.getElementById('endingOverlay').style.display = 'flex';
         save();
@@ -416,15 +416,19 @@ function updateLeaderboard() {
 
         players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
+            // Tambah mahkota jika rebirth 60 atau lebih (tamat game)
+            let crown = (player.rebirths >= 60) ? '👑 ' : '';
+            
             listEl.innerHTML += `
                 <div class="${isMe ? 'me' : ''}">
-                    <span>#${index + 1} ${player.name} <small style="opacity:0.6; font-size:0.65rem;">[R:${player.rebirths || 0}]</small></span>
+                    <span>#${index + 1} ${crown}${player.name} <small style="opacity:0.6; font-size:0.65rem;">[R:${player.rebirths || 0}]</small></span>
                     <span>${formatNum(player.clicks || 0)}</span>
                 </div>
             `;
         });
     });
 }
+
 
 function openFullLeaderboard() {
     const modal = document.getElementById('fullLeaderboardModal');
@@ -455,19 +459,23 @@ function loadFullLeaderboard() {
             return;
         }
 
-        players.forEach((player, index) => {
+                players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
+            // Tambah mahkota jika rebirth 60 atau lebih
+            let crown = (player.rebirths >= 60) ? '👑 ' : '';
+
             listEl.innerHTML += `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: ${isMe ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)'}; border: ${isMe ? '1px solid #3498db' : 'none'}; border-radius: 6px; font-size: 0.85rem;">
                     <span style="width: 15%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};">#${index + 1}</span>
                     <span style="width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};">
-                        ${player.name}
+                        ${crown}${player.name}
                     </span>
                     <span style="width: 15%; opacity: 0.8; color: #e74c3c;">R:${player.rebirths || 0}</span>
                     <span style="width: 25%; text-align: right; font-weight: bold; color: #2ecc71;">${formatNum(player.clicks || 0)}</span>
                 </div>
             `;
         });
+
     });
 }
 
