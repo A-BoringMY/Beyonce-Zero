@@ -697,3 +697,7 @@ function renderAchievements() {
         `;
     });
 }
+
+setInterval(() => {
+    updateLeaderboard();
+}, 2000);
