@@ -12,7 +12,6 @@ let inventory = { sword: false, wand: false, glove: false, laser: false, quantum
 let GAME_VERSION = "v1.0.1";
 let isAdminMode = false;
 let seasonPoints = 0;
-
 let achievements = {
     firstClick: false,
     reach1k: false,
@@ -22,15 +21,6 @@ let achievements = {
     rebirth60: false
 };
 
-const ACHIEVEMENT_LIST = [
-    { id: 'firstClick', name: 'Langkah Pertama', desc: 'Lakukan klik pertama anda', reward: 10 },
-    { id: 'reach1k', name: 'Pemungut Cilik', desc: 'Kumpul 1,000 Clicks', reward: 50 },
-    { id: 'reach1m', name: 'Jutawan Klik', desc: 'Kumpul 1,000,000 Clicks', reward: 500 },
-    { id: 'firstRebirth', name: 'Kelahiran Semula', desc: 'Lakukan Rebirth pertama', reward: 100 },
-    { id: 'rebirth10', name: 'Pemain Tegar', desc: 'Mencapai 10 Rebirths', reward: 1000 },
-    { id: 'rebirth60', name: 'Legenda Bermahkota 👑', desc: 'Mencapai 60 Rebirths (Tamat)', reward: 5000 }
-];
-
 const bgmList = [
     "wet-hand.mp3",
     "minecraft.mp3",
@@ -39,57 +29,37 @@ const bgmList = [
 ];
 let lastPlayedIndex = -1;
 
+// === FUNGSI SEASON AUTOMATIK ===
 function getCurrentSeasonID() {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() + 4 - (d.getDay() || 7));
     const yearStart = new Date(d.getFullYear(), 0, 1);
     const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    
     return `${d.getFullYear()}_W${weekNo}`;
 }
 
-function hideLoadingScreen() {
-    const loader = document.getElementById('gameLoadingOverlay');
-    if (loader && loader.style.display !== 'none') {
-        loader.style.transition = "opacity 0.3s ease";
-        loader.style.opacity = "0";
-        setTimeout(() => { 
-            loader.style.display = 'none'; 
-        }, 300);
-    }
-}
-
 window.onload = function() {
-    // 1. Pelindung Maksimum: Dipaksa padam jika Firebase lambat (3 Saat sahaja)
-    const safetyTimer = setTimeout(() => {
-        console.warn("Loading dipaksa tutup: Pelayan/Firebase lambat.");
-        hideLoadingScreen();
-    }, 3000);
-
-    // 2. Muat data tempatan dahulu
     loadGameData();
+    hideLoadingScreen();
 
-    // 3. Semakan Firebase
-    if (typeof db !== 'undefined' && db) {
-        // Guna .on sahaja (tak perlu gabung dengan .once) untuk pantau versi
-        db.ref('gameConfig/version').on('value', (snapshot) => {
+    if (typeof db !== 'undefined') {
+        db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
             if (serverVersion) {
                 GAME_VERSION = serverVersion;
-                if (typeof updateUI === 'function') updateUI();
+                updateUI();
             }
-            // Padam skrin loading sebaik sahaja Firebase bagi respon
-            clearTimeout(safetyTimer);
-            hideLoadingScreen();
-        }, (err) => {
-            console.log("Firebase load version error:", err);
-            clearTimeout(safetyTimer);
-            hideLoadingScreen();
+        }).catch((err) => console.log("Firebase load version error:", err));
+
+        db.ref('gameConfig/version').on('value', (snapshot) => {
+            let serverVersion = snapshot.val();
+            if (serverVersion && serverVersion !== GAME_VERSION) {
+                GAME_VERSION = serverVersion;
+                updateUI();
+            }
         });
-    } else {
-        // Jika offline / tiada Firebase, terus tutup loading
-        clearTimeout(safetyTimer);
-        hideLoadingScreen();
     }
 };
 
@@ -115,7 +85,6 @@ function loadGameData() {
         
         clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
         diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
-        seasonPoints = 0;
         inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
         
         if (oldName !== "") playerName = oldName;
@@ -133,13 +102,12 @@ function loadGameData() {
             autoClickers = Number(saved.autoClickers) || 0;
             diamondFarms = Number(saved.diamondFarms) || 0;
             endingReached = saved.endingReached || false;
-            seasonPoints = Number(saved.seasonPoints) || 0;
             if (saved.inventory) inventory = saved.inventory;
-            if (saved.achievements) achievements = Object.assign(achievements, saved.achievements);
 
+            // === OFFLINE PROGRESS ===
             if (saved.lastTime) {
                 let secondsOffline = Math.floor((Date.now() - saved.lastTime) / 1000);
-                if (secondsOffline > 43200) secondsOffline = 43200;
+                if (secondsOffline > 43200) secondsOffline = 43200; // Max 12 jam
 
                 if (secondsOffline > 10) {
                     let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
@@ -214,6 +182,7 @@ function doClick(e) {
     checkEnding();
     
     playSFX('sfxClick');
+    
     createParticle(e, finalPower, isCrit); 
     updateUI();
 }
@@ -232,7 +201,6 @@ function updateUI() {
     safeSetText('rebirthCount', rebirths);
     safeSetText('autoSpeed', formatNum(autoClickers));
     safeSetText('clickPwr', formatNum(clickPower));
-    safeSetText('seasonPointDisplay', formatNum(seasonPoints));
     
     let displaySeason = getCurrentSeasonID().replace('_', ' - ');
     safeSetText('seasonBadge', 'SEASON: ' + displaySeason + ' | VER: ' + GAME_VERSION);
@@ -283,8 +251,6 @@ function updateUI() {
     updateEquipmentButton('buyLaser', 'laser', 50000);
     updateEquipmentButton('buyQuantum', 'quantum', 500000);
     updateEquipmentButton('buyVoid', 'void', 5000000);
-
-    renderAchievements();
 }
 
 function safeSetText(id, txt) {
@@ -314,8 +280,8 @@ function doRebirth() {
         diamonds += diaReward; 
         diaReward *= 5; 
         
-        updatePower(); 
         checkAchievements();
+        updatePower(); 
         checkEnding(); 
         updateUI(); 
         save(); 
@@ -360,6 +326,7 @@ function buyItem(type, cost, pwrAdd) {
     }
 }
 
+// === FORMAT NOMBOR (TAMBAH MAX JIKA LEBIH Td) ===
 function formatNum(num) {
     if (isNaN(num) || !isFinite(num) || num >= 1e45) return "MAX";
     if (num >= 1e42) return (num / 1e42).toFixed(2) + "Td";
@@ -369,7 +336,7 @@ function formatNum(num) {
     if (num >= 1e30) return (num / 1e30).toFixed(2) + "No";
     if (num >= 1e27) return (num / 1e27).toFixed(2) + "Oc";
     if (num >= 1e24) return (num / 1e24).toFixed(2) + "Sp";
-    if (num >= 1e21) return (num / 1e21).toFixed(2)0 + "Sx";
+    if (num >= 1e21) return (num / 1e21).toFixed(2) + "Sx";
     if (num >= 1e18) return (num / 1e18).toFixed(2) + "Qi";
     if (num >= 1e15) return (num / 1e15).toFixed(2) + "Q";
     if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
@@ -409,7 +376,7 @@ function closeEnding() {
 function save() {
     const data = { 
         playerName, clicks, diamonds, basePower, itemPower, rebirthCost, rebirths, 
-        diaReward, autoClickers, diamondFarms, endingReached, inventory, seasonPoints, achievements,
+        diaReward, autoClickers, diamondFarms, endingReached, inventory, achievements,
         lastTime: Date.now() 
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
@@ -432,7 +399,7 @@ function saveToGlobalLeaderboard() {
     let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
     const currentSeason = getCurrentSeasonID();
     
-    db.ref(`leaderboards/${currentSeason}/` + playerId).set({
+    db.ref(`leaderboards/${currentSeason}/` + playerId).update({
         playerId: playerId,
         name: myName,
         clicks: clicks,
@@ -447,7 +414,7 @@ function updateLeaderboard() {
     if (!listEl || typeof db === 'undefined') return;
 
     const currentSeason = getCurrentSeasonID();
-    db.ref(`leaderboards/${currentSeason}`).orderByChild('clicks').limitToLast(10).once('value', (snapshot) => {
+    db.ref(`leaderboards/${currentSeason}`).orderByChild('clicks').limitToLast(10).on('value', (snapshot) => {
         let players = [];
         snapshot.forEach((childSnapshot) => {
             players.push(childSnapshot.val());
@@ -529,24 +496,25 @@ function loadFullLeaderboard() {
 }
 
 function changeNameInline() {
+function changeNameInline() {
     let promptMsg = `Masukkan nama baharu atau KOD ADMIN:\n${isAdminMode ? "[ADMIN MODE: ON] - (Taip HELP untuk senarai arahan)" : ""}`;
     let newName = prompt(promptMsg, playerName);
     
     if (newName !== null && newName.trim() !== "") {
         let code = newName.trim();
+        let upperCode = code.toUpperCase();
 
-        if (code === "AzfarAdmin") {
-            let currentNameUpper = playerName ? playerName.toUpperCase() : "";
-            if (currentNameUpper.includes("AZFAR")) {
-                isAdminMode = true;
-                alert("🛡️ ADMIN MODE AKTIF!\n\nTaip 'HELP' dalam kotak nama untuk lihat semua senarai perintah admin.");
-                return;
-            } else {
-                alert("❌ AKSES DITOLAK!\n\nPerintah Admin hanya boleh diakses oleh akaun Azfar sahaja.");
-                return;
-            }
+        // Aktifkan Admin jika nama mengandungi "AZFAR" (Contoh: AZFAR, AZFARALT, dll)
+        if (upperCode.includes("AZFAR")) {
+            isAdminMode = true;
+            playerName = code.substring(0, 12);
+            alert("🛡️ ADMIN MODE AKTIF!\n\nSelamat datang Azfar! Taip 'HELP' dalam kotak nama untuk lihat senarai arahan admin.");
+            save();
+            updateUI();
+            if (typeof updateLeaderboard === 'function') updateLeaderboard();
+            return;
         } 
-        else if (isAdminMode && (code.toUpperCase() === "HELP" || code === "?")) {
+        else if (isAdminMode && (upperCode === "HELP" || upperCode === "?")) {
             alert(
                 "=== 🛡️ ADMIN COMMAND MENU 🛡️ ===\n\n" +
                 "1. CLEAN[hari]\n" +
@@ -561,12 +529,12 @@ function changeNameInline() {
             );
             return;
         }
-        else if (isAdminMode && code.toUpperCase().startsWith("CLEAN")) {
-            let days = parseInt(code.toUpperCase().replace("CLEAN", "")) || 7;
+        else if (isAdminMode && upperCode.startsWith("CLEAN")) {
+            let days = parseInt(upperCode.replace("CLEAN", "")) || 7;
             adminCleanInactive(days);
             return;
         }
-        else if (isAdminMode && code.toUpperCase().startsWith("SETVER")) {
+        else if (isAdminMode && upperCode.startsWith("SETVER")) {
             let newVer = code.replace(/SETVER/i, "").trim();
             if (newVer !== "" && typeof db !== 'undefined') {
                 GAME_VERSION = newVer;
@@ -579,7 +547,7 @@ function changeNameInline() {
             }
             return;
         }
-        else if (code.toUpperCase() === "EXITADMIN") {
+        else if (upperCode === "EXITADMIN") {
             isAdminMode = false;
             alert("🔒 ADMIN MODE DITUTUP.");
             return;
@@ -646,7 +614,6 @@ document.addEventListener("DOMContentLoaded", () => {
 setInterval(() => { 
     if (autoClickers > 0) { 
         clicks += (autoClickers / 10); 
-        checkAchievements();
         checkEnding(); 
         updateUI(); 
     } 
@@ -681,7 +648,7 @@ function checkAchievements() {
 function unlockAchievement(id) {
     if (achievements[id]) return;
     achievements[id] = true;
-    const ach = ACHIEVEMENT_LIST.find(a => a.id === id);
+    const ach = typeof ACHIEVEMENT_LIST !== 'undefined' ? ACHIEVEMENT_LIST.find(a => a.id === id) : null;
     if (ach) {
         diamonds += ach.reward;
         alert(`🏆 PENCAPAIAN DIBUKA!\n\n${ach.name}\n${ach.desc}\n\nGanjaran: +${ach.reward} 💎 Diamonds!`);
@@ -696,30 +663,3 @@ function calculateSeasonPoints(rank) {
     }
     return 0;
 }
-
-function renderAchievements() {
-    const container = document.getElementById('achievementsContainer');
-    if (!container) return;
-    
-    container.innerHTML = "";
-    ACHIEVEMENT_LIST.forEach(ach => {
-        const isUnlocked = achievements[ach.id];
-        container.innerHTML += `
-            <div style="display: flex; justify-content: space-between; align-items: center; background: ${isUnlocked ? 'rgba(46, 204, 113, 0.15)' : '#111'}; border: 1px solid ${isUnlocked ? '#2ecc71' : '#333'}; padding: 10px; border-radius: 8px; text-align: left;">
-                <div>
-                    <div style="font-weight: bold; color: ${isUnlocked ? '#2ecc71' : '#888'};">
-                        ${isUnlocked ? '✅' : '🔒'} ${ach.name}
-                    </div>
-                    <div style="font-size: 0.75rem; color: #aaa;">${ach.desc}</div>
-                </div>
-                <div style="font-weight: bold; font-size: 0.8rem; color: #f1c40f;">
-                    +${ach.reward} 💎
-                </div>
-            </div>
-        `;
-    });
-}
-
-setInterval(() => {
-    updateLeaderboard();
-}, 2000);
