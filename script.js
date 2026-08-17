@@ -41,9 +41,13 @@ function getCurrentSeasonID() {
 }
 
 window.onload = function() {
+    // 1. Selesaikan baca data simpanan tempatan dahulu (Skrin loading masih tutup game)
     loadGameData();
+
+    // 2. Selepas data & borang nama selesai disemak, barulah padam skrin loading!
     hideLoadingScreen();
 
+    // 3. Semakan Firebase berjalan senyap di belakang tabir
     if (typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
@@ -72,6 +76,7 @@ function hideLoadingScreen() {
     }
 }
 
+function loadGameData() {
 function loadGameData() {
     const currentSeason = getCurrentSeasonID();
     let savedSeason = localStorage.getItem('activeSeason');
@@ -107,7 +112,7 @@ function loadGameData() {
             // === OFFLINE PROGRESS ===
             if (saved.lastTime) {
                 let secondsOffline = Math.floor((Date.now() - saved.lastTime) / 1000);
-                if (secondsOffline > 43200) secondsOffline = 43200; // Max 12 jam
+                if (secondsOffline > 43200) secondsOffline = 43200;
 
                 if (secondsOffline > 10) {
                     let offlineClicks = Math.floor((autoClickers * secondsOffline) / 10);
@@ -125,6 +130,20 @@ function loadGameData() {
         }
     }
 
+    // === SEMAK BORANG NAMA SEBELUM LOADING DIPADAM ===
+    const nameSection = document.getElementById('nameInputSection');
+    if (nameSection) {
+        if (playerName && playerName.trim() !== "") {
+            nameSection.style.display = 'none'; // Sembunyi terus jika dah ada nama
+        } else {
+            nameSection.style.display = 'block'; // Tunjuk jika pemain baharu
+        }
+    }
+
+    updatePower();
+    updateUI();
+    if (typeof updateLeaderboard === 'function') updateLeaderboard();
+}
     const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
