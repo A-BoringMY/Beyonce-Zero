@@ -46,12 +46,7 @@ function getCurrentSeasonID() {
 
 window.onload = function() {
     loadGameData();
-    hideLoadingScreen();
-
-    setTimeout(() => {
-        hideLoadingScreen();
-    }, 1000);
-
+    
     if (typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
