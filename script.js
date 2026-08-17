@@ -501,30 +501,64 @@ function changeNameInline() {
         let code = newName.trim();
         let upperCode = code.toUpperCase();
 
-        if (upperCode.includes("AZFAR")) {
-            isAdminMode = true;
-            playerName = code.substring(0, 12);
-            alert("🛡️ ADMIN MODE AKTIF!\n\nSelamat datang Azfar! Taip 'HELP' dalam kotak nama untuk lihat senarai arahan admin.");
-            save();
-            updateUI();
-            if (typeof updateLeaderboard === 'function') updateLeaderboard();
+        // 1. AKTIFKAN ADMIN MODE (Syarat: Nama semasa wajib "Azfar" & Taip "AZFARADMIN")
+        if (upperCode === "AZFARADMIN") {
+            if (playerName.toUpperCase() === "AZFAR") {
+                isAdminMode = true;
+                alert("🛡️ ADMIN MODE AKTIF!\n\nSelamat datang Boss Azfar! Taip 'HELP' untuk lihat senarai arahan admin.");
+            } else {
+                alert("⚠️ AKSES DITOLAK!\n\nNama akaun anda mesti 'Azfar' terlebih dahulu untuk menggunakan kod ini.");
+            }
             return;
         } 
+        
+        // 2. MENU BANTUAN ADMIN (MEMAPARKAN SEMUA COMMAND BARU)
         else if (isAdminMode && (upperCode === "HELP" || upperCode === "?")) {
             alert(
                 "=== 🛡️ ADMIN COMMAND MENU 🛡️ ===\n\n" +
-                "1. CLEAN[hari]\n" +
-                "   • Contoh: CLEAN7 atau CLEAN30\n" +
-                "   • Buang akaun tak aktif dari Firebase.\n\n" +
-                "2. SETVER [versi]\n" +
-                "   • Contoh: SETVER v1.0.6\n" +
-                "   • Tukar versi game untuk SEMUA player.\n\n" +
-                "3. EXITADMIN\n" +
-                "   • Matikan Mod Admin keselamatan.\n\n" +
+                "EDIT AKAUN SENDIRI (TESTING):\n" +
+                "• ADDCLICKS [jumlah]  -> Contoh: ADDCLICKS 1000000\n" +
+                "• ADDDIA [jumlah]     -> Contoh: ADDDIA 5000\n" +
+                "• SETREBIRTH [jumlah] -> Contoh: SETREBIRTH 50\n\n" +
+                "EDIT AKAUN PLAYER LAIN:\n" +
+                "• EDITPLAYER          -> Pilih ID/Nama player untuk ubah data\n\n" +
+                "PENGURUSAN SERVER:\n" +
+                "• CLEAN[hari]         -> Contoh: CLEAN7\n" +
+                "• SETVER [versi]      -> Contoh: SETVER v1.0.6\n" +
+                "• EXITADMIN           -> Matikan Admin Mode\n" +
                 "==============================="
             );
             return;
         }
+
+        // 3. COMMAND TESTING AKAUN SENDIRI
+        else if (isAdminMode && upperCode.startsWith("ADDCLICKS")) {
+            let val = Number(code.replace(/ADDCLICKS/i, "").trim()) || 0;
+            clicks += val;
+            alert(`✅ Berjaya tambah ${formatNum(val)} Clicks!`);
+            save(); updateUI(); return;
+        }
+        else if (isAdminMode && upperCode.startsWith("ADDDIA")) {
+            let val = Number(code.replace(/ADDDIA/i, "").trim()) || 0;
+            diamonds += val;
+            alert(`✅ Berjaya tambah ${formatNum(val)} Diamonds!`);
+            save(); updateUI(); return;
+        }
+        else if (isAdminMode && upperCode.startsWith("SETREBIRTH")) {
+            let val = Number(code.replace(/SETREBIRTH/i, "").trim()) || 0;
+            rebirths = val;
+            updatePower();
+            alert(`✅ Rebirths berjaya diubah kepada ${val}!`);
+            save(); updateUI(); return;
+        }
+
+        // 4. COMMAND EDIT AKAUN PLAYER LAIN DI FIREBASE
+        else if (isAdminMode && upperCode === "EDITPLAYER") {
+            adminEditOtherPlayer();
+            return;
+        }
+
+        // 5. COMMAND PENGURUSAN SERVER
         else if (isAdminMode && upperCode.startsWith("CLEAN")) {
             let days = parseInt(upperCode.replace("CLEAN", "")) || 7;
             adminCleanInactive(days);
@@ -539,7 +573,7 @@ function changeNameInline() {
                 updateUI();
                 if (typeof updateLeaderboard === 'function') updateLeaderboard();
             } else {
-                alert("⚠️ Sila masukkan nombor versi! Contoh: SETVER v1.0.6");
+                alert("⚠️ Sila masukkan nombor versi!");
             }
             return;
         }
@@ -548,12 +582,15 @@ function changeNameInline() {
             alert("🔒 ADMIN MODE DITUTUP.");
             return;
         }
+
+        // EASTER EGG BIASA
         else if (code === "ayam") {
             alert("KOK KO KOK! Anda mendapat 50 Rebirths percuma!");
             rebirths += 50;
             updatePower();
         }
 
+        // TUKAR NAMA BIASA
         playerName = code.substring(0, 12);
         save();
         updateUI();
