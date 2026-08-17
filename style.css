@@ -283,3 +283,68 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
     margin-top: 10px;
     cursor: pointer;
 }
+
+.achievements-section {
+    margin-top: 15px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    border: 1px solid rgba(29, 209, 161, 0.4);
+}
+
+.achievements-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.achievement-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    transition: all 0.3s ease;
+}
+
+.achievement-card.completed {
+    border-color: #1dd1a1;
+    background: rgba(29, 209, 161, 0.12);
+    box-shadow: 0 0 10px rgba(29, 209, 161, 0.25);
+}
+
+.ach-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.ach-title {
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: #fff;
+}
+
+.achievement-card.completed .ach-title {
+    color: #1dd1a1;
+}
+
+.ach-desc {
+    font-size: 0.72rem;
+    opacity: 0.7;
+}
+
+.ach-status {
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.achievement-card.completed .ach-status {
+    color: #1dd1a1;
+    }
+    
