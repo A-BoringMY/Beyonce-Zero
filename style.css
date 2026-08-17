@@ -271,3 +271,15 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
     text-transform: uppercase;
     }
     
+.btn-achievement {
+    background: linear-gradient(135deg, #10ac84, #1dd1a1) !important;
+    color: #fff !important;
+    border: 2px solid #1dd1a1 !important;
+    box-shadow: 0 0 12px rgba(29, 209, 161, 0.4) !important;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer;
+}
