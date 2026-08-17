@@ -41,13 +41,13 @@ function getCurrentSeasonID() {
 }
 
 window.onload = function() {
-    // 1. Selesaikan baca data simpanan tempatan dahulu (Skrin loading masih tutup game)
+    // 1. Selesaikan baca data simpanan tempatan dahulu
     loadGameData();
 
-    // 2. Selepas data & borang nama selesai disemak, barulah padam skrin loading!
+    // 2. Padam skrin loading selepas semakan data selesai
     hideLoadingScreen();
 
-    // 3. Semakan Firebase berjalan senyap di belakang tabir
+    // 3. Semakan Firebase di belakang tabir
     if (typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
@@ -76,7 +76,6 @@ function hideLoadingScreen() {
     }
 }
 
-function loadGameData() {
 function loadGameData() {
     const currentSeason = getCurrentSeasonID();
     let savedSeason = localStorage.getItem('activeSeason');
@@ -131,19 +130,6 @@ function loadGameData() {
     }
 
     // === SEMAK BORANG NAMA SEBELUM LOADING DIPADAM ===
-    const nameSection = document.getElementById('nameInputSection');
-    if (nameSection) {
-        if (playerName && playerName.trim() !== "") {
-            nameSection.style.display = 'none'; // Sembunyi terus jika dah ada nama
-        } else {
-            nameSection.style.display = 'block'; // Tunjuk jika pemain baharu
-        }
-    }
-
-    updatePower();
-    updateUI();
-    if (typeof updateLeaderboard === 'function') updateLeaderboard();
-}
     const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
@@ -345,7 +331,6 @@ function buyItem(type, cost, pwrAdd) {
     }
 }
 
-// === FORMAT NOMBOR (TAMBAH MAX JIKA LEBIH Td) ===
 function formatNum(num) {
     if (isNaN(num) || !isFinite(num) || num >= 1e45) return "MAX";
     if (num >= 1e42) return (num / 1e42).toFixed(2) + "Td";
@@ -515,7 +500,6 @@ function loadFullLeaderboard() {
 }
 
 function changeNameInline() {
-function changeNameInline() {
     let promptMsg = `Masukkan nama baharu atau KOD ADMIN:\n${isAdminMode ? "[ADMIN MODE: ON] - (Taip HELP untuk senarai arahan)" : ""}`;
     let newName = prompt(promptMsg, playerName);
     
@@ -523,7 +507,6 @@ function changeNameInline() {
         let code = newName.trim();
         let upperCode = code.toUpperCase();
 
-        // Aktifkan Admin jika nama mengandungi "AZFAR" (Contoh: AZFAR, AZFARALT, dll)
         if (upperCode.includes("AZFAR")) {
             isAdminMode = true;
             playerName = code.substring(0, 12);
