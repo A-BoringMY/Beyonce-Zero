@@ -12,14 +12,18 @@ let inventory = { sword: false, wand: false, glove: false, laser: false, quantum
 let GAME_VERSION = "v1.0.1";
 let isAdminMode = false;
 let seasonPoints = 0;
-let achievements = {
-    firstClick: false,
-    reach1k: false,
-    reach1m: false,
-    firstRebirth: false,
-    rebirth10: false,
-    rebirth60: false
-};
+
+// === DATA STATUS ACHIEVEMENTS (OBJEK SAFE {}) ===
+let achievementsData = {};
+
+// === SENARAI MASTER ACHIEVEMENTS (ARRAY) ===
+const MASTER_ACHIEVEMENTS = [
+    { id: 'first_click', title: 'Permulaan Baru', desc: 'Lakukan 1 klik pertama', req: () => clicks >= 1, reward: 10 },
+    { id: 'reach_1k', title: 'Penclik Tegar', desc: 'Kumpul 1,000 Clicks', req: () => clicks >= 1000, reward: 50 },
+    { id: 'first_rebirth', title: 'Lahir Semula', desc: 'Lakukan 1 kali Rebirth', req: () => rebirths >= 1, reward: 100 },
+    { id: 'reach_10_rebirth', title: 'Pahlawan Rebirth', desc: 'Lakukan 10 kali Rebirth', req: () => rebirths >= 10, reward: 250 },
+    { id: 'diamond_collector', title: 'Kaya Diamond', desc: 'Kumpul 500 Diamonds', req: () => diamonds >= 500, reward: 150 }
+];
 
 const bgmList = [
     "wet-hand.mp3",
@@ -41,18 +45,13 @@ function getCurrentSeasonID() {
 }
 
 window.onload = function() {
-    // 1. Muat turun data terus dari memori
     loadGameData();
-    
-    // 2. Tutup skrin loading serta-merta (Laju macam App)
     hideLoadingScreen();
 
-    // 3. INSURANS: Jika Firebase lambat/error, paksa tutup skrin loading selepas 1.5 saat
     setTimeout(() => {
         hideLoadingScreen();
-    }, 1500);
+    }, 1000);
 
-    // 4. Firebase berjalan senyap di belakang tabir tanpa menyekat game
     if (typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
@@ -87,6 +86,7 @@ function loadGameData() {
         clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
         diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
         inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
+        achievementsData = {};
         
         if (oldName !== "") playerName = oldName;
         alert(`🏆 SEASON BAHARU!\n\nSeason lama (${savedSeason.replace('_', ' - ')}) telah tamat.\nSelamat bertanding dalam ${currentSeason.replace('_', ' - ')}!`);
@@ -104,8 +104,10 @@ function loadGameData() {
             diamondFarms = Number(saved.diamondFarms) || 0;
             endingReached = saved.endingReached || false;
             if (saved.inventory) inventory = saved.inventory;
+            
+            // BACA DATA ACHIEVEMENTS DENGAN SELAMAT ({})
+            achievementsData = saved.achievementsData || {};
 
-            // === OFFLINE PROGRESS ===
             if (saved.lastTime) {
                 let secondsOffline = Math.floor((Date.now() - saved.lastTime) / 1000);
                 if (secondsOffline > 43200) secondsOffline = 43200;
@@ -126,7 +128,6 @@ function loadGameData() {
         }
     }
 
-    // === SEMAK BORANG NAMA SEBELUM LOADING DIPADAM ===
     const nameSection = document.getElementById('nameInputSection');
     if (nameSection) {
         if (playerName && playerName.trim() !== "") {
@@ -180,11 +181,9 @@ function doClick(e) {
         isCrit = true;
     }
     clicks += finalPower;
-    checkAchievements();
     checkEnding();
     
     playSFX('sfxClick');
-    
     createParticle(e, finalPower, isCrit); 
     updateUI();
 }
@@ -197,7 +196,6 @@ function updatePower() {
 }
 
 function updateUI() {
-    updateAchievementsUI();
     safeSetText('clicks', formatNum(clicks));
     safeSetText('diamonds', formatNum(diamonds));
     safeSetText('rebirthCost', formatNum(rebirthCost));
@@ -254,6 +252,9 @@ function updateUI() {
     updateEquipmentButton('buyLaser', 'laser', 50000);
     updateEquipmentButton('buyQuantum', 'quantum', 500000);
     updateEquipmentButton('buyVoid', 'void', 5000000);
+
+    // KEMASKINI ACHIEVEMENTS UI DENGAN SELAMAT
+    updateAchievementsUI();
 }
 
 function safeSetText(id, txt) {
@@ -283,7 +284,6 @@ function doRebirth() {
         diamonds += diaReward; 
         diaReward *= 5; 
         
-        checkAchievements();
         updatePower(); 
         checkEnding(); 
         updateUI(); 
@@ -378,7 +378,8 @@ function closeEnding() {
 function save() {
     const data = { 
         playerName, clicks, diamonds, basePower, itemPower, rebirthCost, rebirths, 
-        diaReward, autoClickers, diamondFarms, endingReached, inventory, achievements,
+        diaReward, autoClickers, diamondFarms, endingReached, inventory, 
+        achievementsData: achievementsData || {},
         lastTime: Date.now() 
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
@@ -636,27 +637,6 @@ setInterval(() => {
     }
 }, 2000);
 
-function checkAchievements() {
-    if (clicks >= 1 && !achievements.firstClick) unlockAchievement('firstClick');
-    if (clicks >= 1000 && !achievements.reach1k) unlockAchievement('reach1k');
-    if (clicks >= 1000000 && !achievements.reach1m) unlockAchievement('reach1m');
-    if (rebirths >= 1 && !achievements.firstRebirth) unlockAchievement('firstRebirth');
-    if (rebirths >= 10 && !achievements.rebirth10) unlockAchievement('rebirth10');
-    if (rebirths >= 60 && !achievements.rebirth60) unlockAchievement('rebirth60');
-}
-
-function unlockAchievement(id) {
-    if (achievements[id]) return;
-    achievements[id] = true;
-    const ach = typeof ACHIEVEMENT_LIST !== 'undefined' ? ACHIEVEMENT_LIST.find(a => a.id === id) : null;
-    if (ach) {
-        diamonds += ach.reward;
-        alert(`🏆 PENCAPAIAN DIBUKA!\n\n${ach.name}\n${ach.desc}\n\nGanjaran: +${ach.reward} 💎 Diamonds!`);
-        updateUI();
-        save();
-    }
-}
-
 function calculateSeasonPoints(rank) {
     if (rank >= 1 && rank <= 10) {
         return 11 - rank; 
@@ -664,23 +644,23 @@ function calculateSeasonPoints(rank) {
     return 0;
 }
 
-// === SISTEM ACHIEVEMENTS ===
-const achievements = [
-    { id: 'first_click', title: 'Permulaan Baru', desc: 'Lakukan 1 klik pertama', req: () => clicks >= 1 },
-    { id: 'reach_1k', title: 'Penclik Tegar', desc: 'Kumpul 1,000 Clicks', req: () => clicks >= 1000 },
-    { id: 'first_rebirth', title: 'Lahir Semula', desc: 'Lakukan 1 kali Rebirth', req: () => rebirths >= 1 },
-    { id: 'reach_10_rebirth', title: 'Pahlawan Rebirth', desc: 'Lakukan 10 kali Rebirth', req: () => rebirths >= 10 },
-    { id: 'diamond_collector', title: 'Kaya Diamond', desc: 'Kumpul 500 Diamonds', req: () => diamonds >= 500 }
-];
-
+// === SISTEM ACHIEVEMENTS (DENGAN PERLINDUNGAN SAFE UI & SAVE) ===
 function updateAchievementsUI() {
     const container = document.getElementById('achievementsContainer');
     if (!container) return;
 
     container.innerHTML = "";
 
-    achievements.forEach((ach) => {
-        const isCompleted = ach.req();
+    MASTER_ACHIEVEMENTS.forEach((ach) => {
+        // Semak kelayakan atau data simpanan {}
+        let isCompleted = achievementsData[ach.id] === true || ach.req();
+
+        // Ganjaran automatik & simpan
+        if (isCompleted && !achievementsData[ach.id]) {
+            achievementsData[ach.id] = true;
+            diamonds += (ach.reward || 0);
+            save();
+        }
         
         container.innerHTML += `
             <div class="achievement-card ${isCompleted ? 'completed' : ''}">
