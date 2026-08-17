@@ -41,13 +41,18 @@ function getCurrentSeasonID() {
 }
 
 window.onload = function() {
-    // 1. Selesaikan baca data simpanan tempatan dahulu
+    // 1. Muat turun data terus dari memori
     loadGameData();
-
-    // 2. Padam skrin loading selepas semakan data selesai
+    
+    // 2. Tutup skrin loading serta-merta (Laju macam App)
     hideLoadingScreen();
 
-    // 3. Semakan Firebase di belakang tabir
+    // 3. INSURANS: Jika Firebase lambat/error, paksa tutup skrin loading selepas 1.5 saat
+    setTimeout(() => {
+        hideLoadingScreen();
+    }, 1500);
+
+    // 4. Firebase berjalan senyap di belakang tabir tanpa menyekat game
     if (typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
@@ -55,15 +60,7 @@ window.onload = function() {
                 GAME_VERSION = serverVersion;
                 updateUI();
             }
-        }).catch((err) => console.log("Firebase load version error:", err));
-
-        db.ref('gameConfig/version').on('value', (snapshot) => {
-            let serverVersion = snapshot.val();
-            if (serverVersion && serverVersion !== GAME_VERSION) {
-                GAME_VERSION = serverVersion;
-                updateUI();
-            }
-        });
+        }).catch((err) => console.log("Firebase sync error:", err));
     }
 };
 
