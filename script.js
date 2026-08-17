@@ -197,6 +197,7 @@ function updatePower() {
 }
 
 function updateUI() {
+    updateAchievementsUI();
     safeSetText('clicks', formatNum(clicks));
     safeSetText('diamonds', formatNum(diamonds));
     safeSetText('rebirthCost', formatNum(rebirthCost));
@@ -665,47 +666,32 @@ function calculateSeasonPoints(rank) {
 
 // === SISTEM ACHIEVEMENTS ===
 const achievements = [
-    { id: 'first_click', title: 'Permulaan Baru', desc: 'Lakukan 1 klik pertama', req: () => clicks >= 1, reward: 10, claimed: false },
-    { id: 'reach_1k', title: 'Penclik Tegar', desc: 'Kumpul 1,000 Clicks', req: () => clicks >= 1000, reward: 50, claimed: false },
-    { id: 'first_rebirth', title: 'Lahir Semula', desc: 'Lakukan 1 kali Rebirth', req: () => rebirths >= 1, reward: 100, claimed: false },
-    { id: 'reach_10_rebirth', title: 'Pahlawan Rebirth', desc: 'Lakukan 10 kali Rebirth', req: () => rebirths >= 10, reward: 500, claimed: false },
-    { id: 'diamond_collector', title: 'Kaya Diamond', desc: 'Kumpul 500 Diamonds', req: () => diamonds >= 500, reward: 250, claimed: false }
+    { id: 'first_click', title: 'Permulaan Baru', desc: 'Lakukan 1 klik pertama', req: () => clicks >= 1 },
+    { id: 'reach_1k', title: 'Penclik Tegar', desc: 'Kumpul 1,000 Clicks', req: () => clicks >= 1000 },
+    { id: 'first_rebirth', title: 'Lahir Semula', desc: 'Lakukan 1 kali Rebirth', req: () => rebirths >= 1 },
+    { id: 'reach_10_rebirth', title: 'Pahlawan Rebirth', desc: 'Lakukan 10 kali Rebirth', req: () => rebirths >= 10 },
+    { id: 'diamond_collector', title: 'Kaya Diamond', desc: 'Kumpul 500 Diamonds', req: () => diamonds >= 500 }
 ];
 
-function openAchievements() {
-    const modal = document.getElementById('achievementModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        renderAchievements();
-    }
-}
+function updateAchievementsUI() {
+    const container = document.getElementById('achievementsContainer');
+    if (!container) return;
 
-function closeAchievements() {
-    const modal = document.getElementById('achievementModal');
-    if (modal) modal.style.display = 'none';
-}
+    container.innerHTML = "";
 
-function renderAchievements() {
-    const listEl = document.getElementById('achievementList');
-    if (!listEl) return;
-
-    listEl.innerHTML = "";
     achievements.forEach((ach) => {
         const isCompleted = ach.req();
-        listEl.innerHTML += `
-            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid ${isCompleted ? '#2ecc71' : '#444'};">
-                <div style="text-align: left;">
-                    <div style="font-weight: bold; color: ${isCompleted ? '#2ecc71' : '#fff'};">${ach.title}</div>
-                    <div style="font-size: 0.75rem; opacity: 0.8;">${ach.desc}</div>
+        
+        container.innerHTML += `
+            <div class="achievement-card ${isCompleted ? 'completed' : ''}">
+                <div class="ach-info">
+                    <span class="ach-title">${ach.title}</span>
+                    <span class="ach-desc">${ach.desc}</span>
                 </div>
-                <div>
-                    ${isCompleted ? 
-                        `<span style="color: #2ecc71; font-weight: bold; font-size: 0.85rem;">✅ SELESAI</span>` : 
-                        `<span style="color: #e74c3c; font-size: 0.85rem;">🔒 BELUM</span>`
-                    }
+                <div class="ach-status">
+                    ${isCompleted ? '✅ SELESAI' : '🔒 BELUM'}
                 </div>
             </div>
         `;
     });
-    }
-            
+}
