@@ -707,3 +707,52 @@ function updateAchievementsUI() {
         `;
     });
 }
+
+function adminEditOtherPlayer() {
+    if (typeof db === 'undefined') {
+        alert("⚠️ Firebase tidak terhubung!");
+        return;
+    }
+
+    let targetId = prompt("Masukkan Player ID target (boleh tengok di Firebase/Leaderboard):");
+    if (!targetId) return;
+
+    const season = getCurrentSeasonID();
+    const playerRef = db.ref(`leaderboards/${season}/${targetId}`);
+
+    playerRef.once('value').then((snapshot) => {
+        if (!snapshot.exists()) {
+            alert("❌ Player ID tidak dijumpai!");
+            return;
+        }
+
+        let pData = snapshot.val();
+        let choice = prompt(
+            `Mengedit Player: ${pData.name}\n\n` +
+            `1. Ubah Clicks (Sekarang: ${pData.clicks})\n` +
+            `2. Ubah Rebirths (Sekarang: ${pData.rebirths})\n` +
+            `3. Tukar Nama Player\n` +
+            `4. PADAM AKAUN INI\n\n` +
+            `Pilih nombor (1-4):`
+        );
+
+        if (choice === "1") {
+            let newClicks = Number(prompt("Masukkan jumlah Clicks baharu:", pData.clicks));
+            if (!isNaN(newClicks)) playerRef.update({ clicks: newClicks });
+        } else if (choice === "2") {
+            let newRebirths = Number(prompt("Masukkan jumlah Rebirths baharu:", pData.rebirths));
+            if (!isNaN(newRebirths)) playerRef.update({ rebirths: newRebirths });
+        } else if (choice === "3") {
+            let newName = prompt("Masukkan Nama baharu:", pData.name);
+            if (newName) playerRef.update({ name: newName.substring(0, 12).toUpperCase() });
+        } else if (choice === "4") {
+            if (confirm(`Adakah anda pasti nak PADAM akaun ${pData.name}?`)) {
+                playerRef.remove();
+                alert("🗑️ Akaun berjaya dipadam!");
+            }
+        }
+
+        alert("✅ Kemaskini ke Firebase Selesai!");
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
+    });
+    }
