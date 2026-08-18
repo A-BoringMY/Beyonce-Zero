@@ -348,27 +348,32 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
     color: #1dd1a1;
     }
     
-/* EFEK AURA IMMORTAL (MERAH MEMBARA) */
+/* EFEK IMMORTAL (RED DEMONIC AURA) */
 .aura-immortal {
-    border-color: #ff0055 !important;
-    box-shadow: 0 0 20px #ff0055, inset 0 0 15px #ff0055 !important;
-    animation: pulseImmortal 1.5s infinite alternate;
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 20px #e74c3c, inset 0 0 15px #c0392b !important;
+    animation: pulseImmortal 1.2s infinite alternate ease-in-out;
 }
-
 @keyframes pulseImmortal {
-    0% { box-shadow: 0 0 15px #ff0055, inset 0 0 10px #ff0055; }
-    100% { box-shadow: 0 0 30px #ff0000, inset 0 0 20px #ff0000; }
+    0% { box-shadow: 0 0 15px #e74c3c, inset 0 0 10px #c0392b; transform: scale(1); }
+    100% { box-shadow: 0 0 35px #ff0000, inset 0 0 25px #900c3f; transform: scale(1.02); }
 }
 
-/* EFEK AURA ETERNAL (UNGU GALAKSI/COSMIC) */
+/* EFEK ETERNAL (COSMIC NEON AURA) */
 .aura-eternal {
-    border-color: #a29bfe !important;
-    box-shadow: 0 0 25px #a29bfe, 0 0 50px #6c5ce7 !important;
-    animation: pulseEternal 2s infinite alternate;
+    border-color: #ff4757 !important;
+    box-shadow: 0 0 25px #ff4757, 0 0 45px #2e86de, inset 0 0 20px #ff4757 !important;
+    animation: pulseEternal 1.5s infinite alternate ease-in-out;
+}
+@keyframes pulseEternal {
+    0% { filter: hue-rotate(0deg); transform: scale(1); }
+    100% { filter: hue-rotate(60deg); transform: scale(1.03); }
 }
 
-@keyframes pulseEternal {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(45deg); }
-    }
+.text-eternal-glow {
+    color: #ffffff !important;
+    text-shadow: 0 0 10px #ff4757, 0 0 20px #ff4757, 0 0 30px #2e86de, 0 0 40px #2e86de !important;
+    font-weight: bold;
+}
+
           
