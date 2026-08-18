@@ -214,7 +214,6 @@ function updateUI() {
     const container = document.getElementById('mainGame');
     const btn = document.getElementById('clickBtn');
 
-    if (container && title) {
         if (container && title) {
         // 1. CLEAR SEMUA CLASS & STYLE LAMA (SUPAYA TAK BERTINDIH)
         container.classList.remove('aura-overlord', 'aura-mythical', 'aura-divine', 'aura-immortal', 'aura-eternal');
