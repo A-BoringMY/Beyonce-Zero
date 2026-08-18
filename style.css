@@ -348,3 +348,27 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
     color: #1dd1a1;
     }
     
+/* EFEK AURA IMMORTAL (MERAH MEMBARA) */
+.aura-immortal {
+    border-color: #ff0055 !important;
+    box-shadow: 0 0 20px #ff0055, inset 0 0 15px #ff0055 !important;
+    animation: pulseImmortal 1.5s infinite alternate;
+}
+
+@keyframes pulseImmortal {
+    0% { box-shadow: 0 0 15px #ff0055, inset 0 0 10px #ff0055; }
+    100% { box-shadow: 0 0 30px #ff0000, inset 0 0 20px #ff0000; }
+}
+
+/* EFEK AURA ETERNAL (UNGU GALAKSI/COSMIC) */
+.aura-eternal {
+    border-color: #a29bfe !important;
+    box-shadow: 0 0 25px #a29bfe, 0 0 50px #6c5ce7 !important;
+    animation: pulseEternal 2s infinite alternate;
+}
+
+@keyframes pulseEternal {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(45deg); }
+    }
+          
