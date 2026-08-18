@@ -215,20 +215,59 @@ function updateUI() {
     const btn = document.getElementById('clickBtn');
 
     if (container && title) {
-        container.classList.remove('aura-overlord', 'aura-mythical', 'aura-divine');
-        title.classList.remove('text-divine-gold');
-        title.style.color = ""; title.style.textShadow = ""; title.style.animation = "";
+        if (container && title) {
+        // 1. CLEAR SEMUA CLASS & STYLE LAMA (SUPAYA TAK BERTINDIH)
+        container.classList.remove('aura-overlord', 'aura-mythical', 'aura-divine', 'aura-immortal', 'aura-eternal');
+        title.classList.remove('text-divine-gold', 'text-eternal-glow');
+        container.style.borderColor = "";
+        title.style.color = ""; 
+        title.style.textShadow = ""; 
+        title.style.animation = "";
+        title.style.fontSize = "";
+        title.style.fontWeight = "";
         if (btn) btn.classList.remove('aura-divine');
 
-        if (rebirths < 5) title.innerText = "NOOB";
-        else if (rebirths < 10) { title.innerText = "BEGINNER"; container.style.borderColor = "#2ecc71"; }
-        else if (rebirths < 20) { title.innerText = "SKILLED"; container.style.borderColor = "#3498db"; }
-        else if (rebirths < 30) { title.innerText = "EXPERT"; container.style.borderColor = "#f1c40f"; }
-        else if (rebirths < 40) { title.innerText = "OVERLORD"; container.classList.add('aura-overlord'); }
-        else if (rebirths < 50) { title.innerText = "MYTHICAL"; container.classList.add('aura-mythical'); }
-        else if (rebirths < 60) { title.innerText = "IMMORTAL"; title.style.color = "#e74c3c"; }
-        else if (rebirths < 70) { title.innerText = "DIVINE"; title.classList.add('text-divine-gold'); container.classList.add('aura-divine'); }
-        else if (rebirths < 85) { title.innerText = "ETERNAL"; title.style.color = "#ff4757"; title.style.textShadow = "0 0 20px #ff4757"; }
+        // 2. TIER VISUAL BERIKUTAN TINGKAT REBIRTH
+        if (rebirths < 5) {
+            title.innerText = "NOOB";
+        } 
+        else if (rebirths < 10) { 
+            title.innerText = "BEGINNER"; 
+            container.style.borderColor = "#2ecc71"; 
+        } 
+        else if (rebirths < 20) { 
+            title.innerText = "SKILLED"; 
+            container.style.borderColor = "#3498db"; 
+        } 
+        else if (rebirths < 30) { 
+            title.innerText = "EXPERT"; 
+            container.style.borderColor = "#f1c40f"; 
+        } 
+        else if (rebirths < 40) { 
+            title.innerText = "OVERLORD"; 
+            container.classList.add('aura-overlord'); 
+        } 
+        else if (rebirths < 50) { 
+            title.innerText = "MYTHICAL"; 
+            container.classList.add('aura-mythical'); 
+        } 
+        else if (rebirths < 60) { 
+            title.innerText = "IMMORTAL"; 
+            title.style.color = "#ff2e2e";
+            title.style.textShadow = "0 0 15px #ff0000, 0 0 25px #800000";
+            container.classList.add('aura-immortal'); // Aura berdenyut merah
+        } 
+        else if (rebirths < 70) { 
+            title.innerText = "DIVINE"; 
+            title.classList.add('text-divine-gold'); 
+            container.classList.add('aura-divine'); 
+            if (btn) btn.classList.add('aura-divine');
+        } 
+        else if (rebirths < 85) { 
+            title.innerText = "ETERNAL"; 
+            title.classList.add('text-eternal-glow'); // Teks glow gabungan neon
+            container.classList.add('aura-eternal');   // Aura cosmic bertukar warna
+        } 
         else {
             title.innerText = "THE CREATOR";
             title.style.animation = "rainbow 1s infinite linear";
@@ -236,7 +275,7 @@ function updateUI() {
             title.style.fontSize = "2.2rem";
         }
     }
-    
+
     if (document.getElementById('rebirthBtn')) document.getElementById('rebirthBtn').disabled = (clicks < rebirthCost);
     if (document.getElementById('buyAuto')) document.getElementById('buyAuto').disabled = (diamonds < a);
     if (document.getElementById('buyFarm')) document.getElementById('buyFarm').disabled = (diamonds < (a * 5));
