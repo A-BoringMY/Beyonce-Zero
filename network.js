@@ -171,16 +171,30 @@ function loadFullLeaderboard() {
             let estSP = calculateSeasonPoints(index + 1);
             let tsp = player.totalSeasonPoints || 0;
 
-            listEl.innerHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: ${isMe ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)'}; border: ${isMe ? '1px solid #3498db' : 'none'}; border-radius: 6px; font-size: 0.85rem;">
-                    <span style="width: 10%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};">#${index + 1}</span>
-                    <span style="width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};">
-                        ${crown}${escapeHTML(player.name)}
-                    </span>
-                    <span style="width: 27%; opacity: 0.85; font-size: 0.65rem; color: #ff793f;">R:${player.rebirths || 0} SP:⭐${estSP} TSP:🌟${tsp}</span>
-                    <span style="width: 25%; text-align: right; font-weight: bold; color: #2ecc71;">${formatNum(player.clicks || 0)}</span>
-                </div>
-            `;
+            const row = document.createElement('div');
+            row.style.cssText = `display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: ${isMe ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)'}; border: ${isMe ? '1px solid #3498db' : 'none'}; border-radius: 6px; font-size: 0.85rem;`;
+
+            const rankEl = document.createElement('span');
+            rankEl.style.cssText = `width: 10%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};`;
+            rankEl.textContent = `#${index + 1}`;
+
+            const nameEl = document.createElement('span');
+            nameEl.style.cssText = `width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};`;
+            nameEl.textContent = `${crown}${player.name || ''}`;
+
+            const statsEl = document.createElement('span');
+            statsEl.style.cssText = 'width: 27%; opacity: 0.85; font-size: 0.65rem; color: #ff793f;';
+            statsEl.textContent = `R:${player.rebirths || 0} SP:⭐${estSP} TSP:🌟${tsp}`;
+
+            const clicksEl = document.createElement('span');
+            clicksEl.style.cssText = 'width: 25%; text-align: right; font-weight: bold; color: #2ecc71;';
+            clicksEl.textContent = `${formatNum(player.clicks || 0)}`;
+
+            row.appendChild(rankEl);
+            row.appendChild(nameEl);
+            row.appendChild(statsEl);
+            row.appendChild(clicksEl);
+            listEl.appendChild(row);
         });
     });
 }
