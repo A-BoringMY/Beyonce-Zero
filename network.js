@@ -82,12 +82,29 @@ function updateLeaderboard() {
                 seasonPoints = estSP;
             }
 
-            listEl.innerHTML += `
-                <div class="${isMe ? 'me' : ''}">
-                    <span>#${index + 1} ${crown}${escapeHTML(player.name)} <small style="opacity:0.7; font-size:0.65rem;">[R:${player.rebirths || 0} | SP:⭐${estSP} | TSP:🌟${tsp}]</small></span>
-                    <span>${formatNum(player.clicks || 0)}</span>
-                </div>
-            `;
+            const rowEl = document.createElement('div');
+            if (isMe) rowEl.className = 'me';
+
+            const leftSpan = document.createElement('span');
+            const metaSmall = document.createElement('small');
+            metaSmall.style.opacity = '0.7';
+            metaSmall.style.fontSize = '0.65rem';
+
+            const safeName = (player && player.name != null) ? String(player.name) : '';
+            const safeRebirths = Number(player && player.rebirths) || 0;
+            const safeClicks = Number(player && player.clicks) || 0;
+            const safeTsp = Number(tsp) || 0;
+
+            leftSpan.textContent = `#${index + 1} ${crown}${safeName} `;
+            metaSmall.textContent = `[R:${safeRebirths} | SP:⭐${estSP} | TSP:🌟${safeTsp}]`;
+            leftSpan.appendChild(metaSmall);
+
+            const rightSpan = document.createElement('span');
+            rightSpan.textContent = formatNum(safeClicks);
+
+            rowEl.appendChild(leftSpan);
+            rowEl.appendChild(rightSpan);
+            listEl.appendChild(rowEl);
         });
     }, (error) => {
         // Jika Firebase gagal sambung disebabkan masalah network sementara
