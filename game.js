@@ -27,8 +27,9 @@ window.addEventListener('online', () => {
     if (typeof addGameLog === 'function') {
         addGameLog('🌐 Sambungan internet kembali! Leaderboard dikemas kini.', 'sys');
     }
-    if (typeof loadLeaderboard === 'function') {
-        loadLeaderboard(); 
+    // PAKSA REFRESH LEADERBOARD AUTOMATIK BILA INTERNET ADA BALIK
+    if (typeof updateLeaderboard === 'function') {
+        updateLeaderboard(); 
     }
 });
 
@@ -36,6 +37,10 @@ window.addEventListener('offline', () => {
     checkNetworkStatus();
     if (typeof addGameLog === 'function') {
         addGameLog('📡 Anda dalam Offline Mode. Progress disimpan dalam phone.', 'sys');
+    }
+    // KEMASKINI PAPARAN LEADERBOARD SERTA-MERTA BILA INTERNET PUTUS
+    if (typeof updateLeaderboard === 'function') {
+        updateLeaderboard();
     }
 });
 
