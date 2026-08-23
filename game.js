@@ -1,7 +1,8 @@
 // === GAME.JS ===
 let isMusicOn = true;
 let isSFXOn = true;
-let initialOfflineLogged = false; 
+let initialOfflineLogged = false;
+let isCurrentlyOffline = false;
 
 // 1. UTAMA (WINDOW LOAD & HIDE LOADER)
 window.onload = function() {
@@ -52,21 +53,28 @@ function checkNetworkStatus() {
     if (seasonBadge) {
         let displaySeason = getCurrentSeasonID().replace('_', ' - ');
         if (isOnline) {
-            // ONLINE: Kembalikan teks biasa dan jalankan updateUI() untuk ambil warna/efek rank
+            isCurrentlyOffline = false;
             seasonBadge.innerText = `SEASON: ${displaySeason} | VER: ${GAME_VERSION}`;
-            seasonBadge.style.color = "#f1c40f"; // Kelabu
+            seasonBadge.style.color = "#f1c40f"; 
             updateUI(); 
         } else {
-            // OFFLINE: Paksa buang class efek rank & tukar warna jadi KELABU
             seasonBadge.className = ""; 
             seasonBadge.style.color = "#7f8c8d"; // Kelabu
-
-            if (!initialOfflineLogged && typeof addGameLog === 'function') {
-                addGameLog('📡 Anda dalam Offline Mode. Progress disimpan dalam phone.', 'sys');
-                initialOfflineLogged = true; // Elak log berulang
+            
+            // Cetak log sekali sahaja jika masa buka app memang offline
+            if (!isCurrentlyOffline) {
+                isCurrentlyOffline = true;
+                if (typeof addGameLog === 'function') {
+                    addGameLog('📡 Anda dalam Offline Mode. Progress disimpan dalam phone.', 'sys');
+                }
             }
         }
     }
+
+    if (typeof updateLeaderboardOfflineUI === 'function') {
+        updateLeaderboardOfflineUI(!isOnline);
+    }
+}
 
     // Terapkan Sensor Leaderboard
     if (typeof updateLeaderboardOfflineUI === 'function') {
