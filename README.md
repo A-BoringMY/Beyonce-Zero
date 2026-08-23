@@ -11,9 +11,9 @@
 
 ## 🎮 Ciri-Ciri Utama (Features)
 
-* **Sistem Rebirth & Rank Titling:** Kumpul Clicks dan Diamonds untuk tingkatkan *Click Power* serta tingkatkan gelaran Rank anda dari *NOOB* hingga *THE CREATOR*.
-* **Automation & Equipment:** Beli *Auto Clicker*, *Diamond Farm*, hingga *Void Blade* untuk mempercepatkan pengumpulan *Clicks*.
-* **Global Leaderboard (Season Based):** Carta kedudukan pemain secara langsung (*real-time*) disinkronkan mengikut sistem **Season**.
+* **🔄Sistem Rebirth & Rank Titling:** Kumpul Clicks dan Diamonds untuk tingkatkan *Click Power* serta tingkatkan gelaran Rank anda dari *NOOB* hingga *THE CREATOR*.
+* **💲Automation & Equipment:** Beli *Auto Clicker*, *Diamond Farm*, hingga *Void Blade* untuk mempercepatkan pengumpulan *Clicks*.
+* **🏆Global Leaderboard (Season Based):** Carta kedudukan pemain secara langsung (*real-time*) disinkronkan mengikut sistem **Season**.
 * **📡 Seamless Offline Mode:** Boleh dimainkan pada bila-bila masa walaupun tiada sambungan internet. Progress disimpan secara tempatan (*Local Storage*) dan Leaderboard disensor secara automatik.
 * **🏆 Achievements & Log System:** Sistem pencapaian berganjaran *Diamonds* dan *Live Game Log* yang boleh disalin (*copy to clipboard*).
 * **📱 PWA Supported:** Boleh dipasang (*install*) terus ke skrin utama telefon Android/iOS seperti aplikasi APK sebenar tanpa muat turun di Play Store!
@@ -39,4 +39,4 @@
 
 ## 👨‍💻 Pembangun (Developer)
 
-Dikembangkan dengan penuh dedikasi oleh **Azfar 1A3**.
+Dikembangkan dengan penuh dedikasi oleh **Azfar 1A3**🇲🇾🇲🇾🇲🇾.
