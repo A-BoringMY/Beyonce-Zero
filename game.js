@@ -1,6 +1,7 @@
 // === GAME.JS ===
 let isMusicOn = true;
 let isSFXOn = true;
+let initialOfflineLogged = false; 
 
 // 1. UTAMA (WINDOW LOAD & HIDE LOADER)
 window.onload = function() {
@@ -59,6 +60,11 @@ function checkNetworkStatus() {
             // OFFLINE: Paksa buang class efek rank & tukar warna jadi KELABU
             seasonBadge.className = ""; 
             seasonBadge.style.color = "#7f8c8d"; // Kelabu
+
+            if (!initialOfflineLogged && typeof addGameLog === 'function') {
+                addGameLog('📡 Anda dalam Offline Mode. Progress disimpan dalam phone.', 'sys');
+                initialOfflineLogged = true; // Elak log berulang
+            }
         }
     }
 
