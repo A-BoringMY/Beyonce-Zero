@@ -7,7 +7,10 @@ window.onload = function() {
     loadGameData();
     updateAchievementsUI();
     
-    if (typeof db !== 'undefined') {
+    // Pastikan UI status internet & Leaderboard diselaraskan terus
+    checkNetworkStatus();
+
+    if (navigator.onLine && typeof db !== 'undefined') {
         db.ref('gameConfig/version').once('value').then((snapshot) => {
             let serverVersion = snapshot.val();
             if (serverVersion) {
@@ -17,6 +20,65 @@ window.onload = function() {
         }).catch((err) => console.log("Firebase sync error:", err));
     }
 };
+
+// Pengesan Internet Real-Time (Otomatis bila terputus / tersambung)
+window.addEventListener('online', () => {
+    checkNetworkStatus();
+    if (typeof addGameLog === 'function') {
+        addGameLog('🌐 Sambungan internet kembali! Leaderboard dikemas kini.', 'sys');
+    }
+    if (typeof loadLeaderboard === 'function') {
+        loadLeaderboard(); 
+    }
+});
+
+window.addEventListener('offline', () => {
+    checkNetworkStatus();
+    if (typeof addGameLog === 'function') {
+        addGameLog('📡 Anda dalam Offline Mode. Progress disimpan dalam phone.', 'sys');
+    }
+});
+
+function checkNetworkStatus() {
+    const isOnline = navigator.onLine;
+    
+    // 1. Kemas kini Badge Season / Status Network di UI
+    let seasonBadge = document.getElementById('seasonBadge');
+    if (seasonBadge) {
+        let displaySeason = getCurrentSeasonID().replace('_', ' - ');
+        if (isOnline) {
+            seasonBadge.innerText = `SEASON: ${displaySeason} | VER: ${GAME_VERSION}`;
+            seasonBadge.style.color = "#ffffff";
+        } else {
+            seasonBadge.innerText = `🔴 OFFLINE MODE | SEASON: ${displaySeason}`;
+            seasonBadge.style.color = "#e74c3c";
+        }
+    }
+
+    // 2. Terapkan Sensor Leaderboard
+    updateLeaderboardOfflineUI(!isOnline);
+}
+
+function updateLeaderboardOfflineUI(isOffline) {
+    // CARI CONTIANER LEADERBOARD (Ubah ID di bawah jika HTML anda guna ID lain)
+    const lbContainer = document.getElementById('leaderboardContent') || 
+                        document.getElementById('leaderboardList') || 
+                        document.getElementById('leaderboard');
+
+    if (!lbContainer) return;
+
+    if (isOffline) {
+        // PADAM SENARAI LAMA & TUKAR KEPADA MESEJ OFFLINE
+        lbContainer.innerHTML = `
+            <div style="padding: 25px 15px; text-align: center; color: #e74c3c; font-weight: bold; background: rgba(0,0,0,0.4); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; margin: 10px 0;">
+                <div style="font-size: 1.2rem; margin-bottom: 5px;">📡 OFFLINE MODE</div>
+                <span style="font-size: 0.8rem; color: #ccc; font-weight: normal; line-height: 1.4; display: block;">
+                    Tiada sambungan internet.<br>Carta Leaderboard Global disensor sementara sehingga internet disambung semula.
+                </span>
+            </div>
+        `;
+    }
+}
 
 function hideLoadingScreen() {
     const loader = document.getElementById('gameLoadingOverlay');
