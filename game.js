@@ -46,22 +46,26 @@ window.addEventListener('offline', () => {
 
 function checkNetworkStatus() {
     const isOnline = navigator.onLine;
-    
-    // 1. Kemas kini Badge Season / Status Network di UI
     let seasonBadge = document.getElementById('seasonBadge');
+    
     if (seasonBadge) {
         let displaySeason = getCurrentSeasonID().replace('_', ' - ');
         if (isOnline) {
+            // ONLINE: Kembalikan teks biasa dan jalankan updateUI() untuk ambil warna/efek rank
             seasonBadge.innerText = `SEASON: ${displaySeason} | VER: ${GAME_VERSION}`;
-            seasonBadge.style.color = "#ffffff";
+            seasonBadge.style.color = "#f1c40f"; // Kelabu
+            updateUI(); 
         } else {
-            seasonBadge.innerText = `🔴 OFFLINE MODE | SEASON: ${displaySeason}`;
-            seasonBadge.style.color = "#e74c3c";
+            // OFFLINE: Paksa buang class efek rank & tukar warna jadi KELABU
+            seasonBadge.className = ""; 
+            seasonBadge.style.color = "#7f8c8d"; // Kelabu
         }
     }
 
-    // 2. Terapkan Sensor Leaderboard
-    updateLeaderboardOfflineUI(!isOnline);
+    // Terapkan Sensor Leaderboard
+    if (typeof updateLeaderboardOfflineUI === 'function') {
+        updateLeaderboardOfflineUI(!isOnline);
+    }
 }
 
 function updateLeaderboardOfflineUI(isOffline) {
