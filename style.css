@@ -1,0 +1,553 @@
+/* ==========================================
+   1. ANIMATION KEYFRAMES
+   ========================================== */
+
+/* Utility Animations */
+@keyframes pulse { 
+    0%, 100% { transform: scale(1); text-shadow: 0 0 10px #00ecff; } 
+    50% { transform: scale(1.05); text-shadow: 0 0 30px #00ecff; } 
+}
+
+@keyframes floatUp { 
+    0% { transform: translateY(0) scale(1); opacity: 1; } 
+    100% { transform: translateY(-120px) scale(1.5); opacity: 0; } 
+}
+
+@keyframes shake { 
+    0%, 100% { transform: translate(1px, 1px); } 
+    10% { transform: translate(-2px, -1px); } 
+}
+
+/* Aura & Background Animations */
+@keyframes divineRGB {
+    0%, 100% { border-color: #ff0000; box-shadow: 0 0 25px #ff0000; }
+    33% { border-color: #00ff00; box-shadow: 0 0 25px #00ff00; }
+    66% { border-color: #0000ff; box-shadow: 0 0 25px #0000ff; }
+}
+
+@keyframes pulseEternal {
+    0% { filter: hue-rotate(0deg); transform: scale(1); }
+    100% { filter: hue-rotate(60deg); transform: scale(1.03); }
+}
+
+@keyframes slowPulseCreator {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.015); }
+}
+
+/* Text & Title Animations */
+@keyframes goldenGlow {
+    0%, 100% { color: #f1c40f; text-shadow: 0 0 10px #f39c12, 0 0 20px #f1c40f; transform: scale(1); }
+    50% { color: #ffffff; text-shadow: 0 0 20px #f1c40f, 0 0 40px #ffcc00; transform: scale(1.15); }
+}
+
+@keyframes rainbowGlow { 
+    0%, 100% { border-color: #ff0000; box-shadow: 0 0 15px #ff0000; color: #ff0000; } 
+    20% { border-color: #f1c40f; box-shadow: 0 0 15px #f1c40f; color: #f1c40f; } 
+    40% { border-color: #2ecc71; box-shadow: 0 0 15px #2ecc71; color: #2ecc71; } 
+    60% { border-color: #3498db; box-shadow: 0 0 15px #3498db; color: #3498db; } 
+    80% { border-color: #9b59b6; box-shadow: 0 0 15px #9b59b6; color: #9b59b6; } 
+}
+
+@keyframes pulseGlow {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px currentColor); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 18px currentColor); }
+}
+
+@keyframes immortalTextPulse {
+    0%, 100% { transform: scale(1); text-shadow: 0 0 10px #ff0000; }
+    50% { transform: scale(1.1); text-shadow: 0 0 25px #ff0000, 0 0 35px #900c3f; }
+}
+
+/* Animation khas untuk Creator: Rainbow Glow + Pulse Mega */
+@keyframes rainbowPulseCreator {
+    0% {
+        border-color: #ff0000;
+        box-shadow: 0 0 25px #ff0000, inset 0 0 15px #ff0000;
+        transform: scale(1);
+    }
+    20% {
+        border-color: #f1c40f;
+        box-shadow: 0 0 30px #f1c40f, inset 0 0 20px #f1c40f;
+    }
+    40% {
+        border-color: #2ecc71;
+        box-shadow: 0 0 25px #2ecc71, inset 0 0 15px #2ecc71;
+        transform: scale(1.03);
+    }
+    60% {
+        border-color: #00f3ff;
+        box-shadow: 0 0 35px #00f3ff, inset 0 0 25px #00f3ff;
+    }
+    80% {
+        border-color: #9b59b6;
+        box-shadow: 0 0 25px #9b59b6, inset 0 0 15px #9b59b6;
+        transform: scale(1);
+    }
+    100% {
+        border-color: #ff0000;
+        box-shadow: 0 0 25px #ff0000, inset 0 0 15px #ff0000;
+    }
+}
+
+
+/* ==========================================
+   2. BASE STYLES & LAYOUT
+   ========================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body { 
+    font-family: 'Segoe UI', sans-serif; 
+    text-align: center; 
+    background: #0b0b0b; 
+    color: #ffffff; 
+    margin: 0; 
+    padding: 12px; 
+    padding-bottom: 80px;
+    overflow-y: auto; 
+    touch-action: manipulation; 
+    user-select: none;
+}
+
+.container, .game-container { 
+    background: #1a1a1a; 
+    padding: 20px; 
+    border-radius: 25px; 
+    width: 100%;
+    max-width: 420px; 
+    margin: 10px auto; 
+    border: 2px solid #333333; 
+    transition: all 0.5s ease; 
+}
+
+#title, .player-title {
+    font-size: 2rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.stats { 
+    background: #222222; 
+    padding: 15px; 
+    border-radius: 15px; 
+    margin-bottom: 15px; 
+    border-bottom: 4px solid #007bff; 
+}
+
+.particle { 
+    position: absolute; 
+    pointer-events: none; 
+    font-weight: 900; 
+    font-size: 2rem; 
+    color: #ffffff; 
+    text-shadow: 0 0 10px #00ecff; 
+    animation: floatUp 0.7s forwards; 
+    z-index: 1000; 
+}
+
+
+/* ==========================================
+   3. BUTTONS & CONTROLS
+   ========================================== */
+
+#clickBtn { 
+    background: linear-gradient(#3498db, #2980b9); 
+    color: #ffffff; 
+    width: 100%; 
+    height: 130px; 
+    font-size: 2.8rem; 
+    border-radius: 25px; 
+    border: 6px solid #1c5985; 
+    cursor: pointer; 
+    font-weight: bold; 
+    box-shadow: 0 10px 0 #154360; 
+    outline: none; 
+    transition: 0.1s;
+}
+
+#clickBtn:active { 
+    animation: shake 0.1s infinite; 
+    transform: translateY(6px); 
+    box-shadow: 0 4px 0 #154360; 
+}
+
+.shop-btn { 
+    background: #27ae60; 
+    color: #ffffff; 
+    width: 100%; 
+    border: none; 
+    padding: 14px; 
+    border-radius: 10px; 
+    font-weight: bold; 
+    display: flex; 
+    justify-content: space-between; 
+    cursor: pointer; 
+    font-size: 0.8rem; 
+}
+
+.rebirth-btn { 
+    background: #e67e22; 
+    color: #ffffff; 
+    width: 100%; 
+    padding: 14px; 
+    border: none; 
+    border-radius: 10px; 
+    cursor: pointer; 
+    font-weight: bold; 
+}
+
+button:disabled { 
+    opacity: 0.3; 
+    cursor: not-allowed; 
+}
+
+
+/* ==========================================
+   4. AURA CONTAINER EFFECTS
+   ========================================== */
+
+.aura-overlord { 
+    animation: shake 0.2s infinite !important; 
+    background: #4b0082 !important; 
+    border-color: #8e44ad !important; 
+}
+
+.aura-mythical { 
+    animation: rainbowGlow 4s infinite linear !important; 
+}
+
+.aura-immortal {
+    border: 2px solid #e74c3c !important;
+    box-shadow: 0 0 20px #e74c3c, inset 0 0 12px #c0392b !important;
+}
+
+.aura-divine { 
+    border: 3px solid #f1c40f !important;
+    box-shadow: 0 0 20px #f1c40f, inset 0 0 10px #f39c12 !important;
+}
+
+.aura-eternal {
+    border-color: #00f3ff !important;
+    box-shadow: 0 0 20px #00f3ff, inset 0 0 15px #0077ff !important;
+    animation: pulseEternal 1.5s infinite alternate ease-in-out;
+}
+
+.aura-creator {
+    border: 4px solid #ffffff !important;
+    animation: rainbowPulseCreator 2s infinite ease-in-out !important;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.8) 100%) !important;
+}
+
+.aura-beyond { 
+    animation: divineRGB 0.8s infinite linear !important; 
+    border: 6px double #9b59b6 !important; 
+    box-shadow: 0 0 30px #9b59b6, inset 0 0 15px #ffffff !important; 
+}
+
+
+/* ==========================================
+   5. TEXT EFFECTS
+   ========================================== */
+
+.text-pulse-immortal {
+    color: #ff2e2e !important;
+    font-weight: 800;
+    display: inline-block;
+    animation: immortalTextPulse 1.2s infinite ease-in-out;
+}
+
+.text-mythical {
+    animation: rainbowGlow 4s infinite linear !important;
+    font-weight: 800;
+    display: inline-block;
+}
+
+.text-pulse-gold {
+    font-weight: 800;
+    display: inline-block;
+    animation: goldenGlow 1.8s infinite ease-in-out !important;
+}
+
+.text-eternal-glow {
+    color: #ffffff !important;
+    text-shadow: 0 0 10px #ff4757, 0 0 20px #ff4757, 0 0 30px #2e86de !important;
+    font-weight: bold;
+}
+
+.text-pulse-cyan {
+    color: #00f3ff;
+    font-weight: 900;
+    letter-spacing: 2px;
+    display: inline-block;
+    animation: pulseGlow 1.2s infinite ease-in-out;
+    text-shadow: 0 0 12px #00f3ff, 0 0 25px #0088ff;
+}
+
+.text-beyond { 
+    animation: goldenGlow 1s infinite ease-in-out !important; 
+    font-weight: 900 !important; 
+    text-transform: uppercase;
+}
+
+.text-season { 
+    color: #f1c40f; 
+}
+
+.text-creator-rainbow {
+    background: linear-gradient(to right, #ff0000, #f1c40f, #2ecc71, #00f3ff, #9b59b6, #ff0000);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 900 !important;
+    font-size: 1.1em;
+    animation: rainbowGlow 3s infinite linear;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+
+/* ==========================================
+   6. OVERLAYS & MODALS
+   ========================================== */
+
+#startOverlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: radial-gradient(circle, #1a1a1a 0%, #000000 100%); 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 100; 
+    text-align: center;
+}
+
+.game-logo { 
+    font-size: 3rem; 
+    font-weight: 900; 
+    color: #00ecff; 
+    animation: pulse 2s infinite; 
+    margin-bottom: 20px; 
+}
+
+.game-logo span { 
+    display: block; 
+    font-size: 1rem; 
+    color: #ffffff; 
+    letter-spacing: 4px; 
+    opacity: 0.7; 
+}
+
+#nameInputSection { 
+    margin: 20px 0; 
+    width: 80%; 
+    max-width: 280px; 
+}
+
+#playerNameInput {
+    width: 100%; 
+    padding: 15px; 
+    border-radius: 15px; 
+    border: 2px solid #00ecff;
+    background: rgba(0, 0, 0, 0.7); 
+    color: #ffffff; 
+    text-align: center;
+    font-size: 1.1rem; 
+    font-weight: bold; 
+    outline: none; 
+}
+
+.start-btn { 
+    background: linear-gradient(45deg, #27ae60, #2ecc71); 
+    color: #ffffff; 
+    padding: 18px 45px; 
+    border: none; 
+    border-radius: 50px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    width: 200px; 
+}
+
+
+/* ==========================================
+   7. SHOP & SELECTORS
+   ========================================== */
+
+.section { 
+    margin-top: 15px; 
+    padding: 15px; 
+    background: #252525; 
+    border-radius: 15px; 
+}
+
+.buy-selector { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 5px; 
+    margin-bottom: 12px; 
+    background: #111111; 
+    padding: 8px; 
+    border-radius: 10px; 
+}
+
+.buy-selector label { 
+    font-size: 0.7rem; 
+    padding: 6px; 
+    background: #222222; 
+    border-radius: 6px; 
+    cursor: pointer; 
+}
+
+.buy-selector input { 
+    display: none; 
+}
+
+.buy-selector input:checked + span { 
+    color: #00ecff; 
+    font-weight: bold; 
+}
+
+
+/* ==========================================
+   8. LEADERBOARD
+   ========================================== */
+
+#leaderboard-list div { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 8px 10px; 
+    border-bottom: 1px solid #222222; 
+}
+
+#leaderboard-list .me { 
+    color: #00ecff; 
+    font-weight: bold; 
+    background: rgba(0, 236, 255, 0.15); 
+    border-left: 4px solid #00ecff; 
+    text-shadow: 0 0 8px #00ecff; 
+}
+
+#displayPlayerName:hover {
+    text-shadow: 0 0 10px #00ecff;
+    opacity: 0.8;
+}
+
+
+/* ==========================================
+   9. ACHIEVEMENTS
+   ========================================== */
+
+.achievements-section {
+    background: #0d0f12;
+    border: 2px solid #00d2d3;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 0 12px rgba(0, 210, 211, 0.2);
+    margin-top: 15px;
+}
+
+.achievements-section h3 {
+    text-align: center;
+    color: #00d2d3;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.achievements-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.achievement-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #00d2d3;
+    transition: all 0.3s ease;
+}
+
+.achievement-card.completed {
+    border-color: #1dd1a1;
+    background: rgba(29, 209, 161, 0.12);
+    box-shadow: 0 0 10px rgba(29, 209, 161, 0.25);
+}
+
+.ach-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.ach-title {
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: #ffffff;
+}
+
+.achievement-card.completed .ach-title { 
+    color: #1dd1a1; 
+}
+
+.ach-desc { 
+    font-size: 0.72rem; 
+    opacity: 0.7; 
+}
+
+.ach-status { 
+    font-size: 0.78rem; 
+    font-weight: bold; 
+    color: #e74c3c; 
+}
+
+.achievement-card.completed .ach-status { 
+    color: #1dd1a1; 
+}
+
+.btn-achievement {
+    background: linear-gradient(135deg, #10ac84, #1dd1a1) !important;
+    color: #ffffff !important;
+    border: 2px solid #1dd1a1 !important;
+    box-shadow: 0 0 12px rgba(29, 209, 161, 0.4) !important;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+
+/* ==========================================
+   10. CUSTOM SCROLLBARS
+   ========================================== */
+
+#fullLeaderboardList::-webkit-scrollbar,
+.achievements-grid::-webkit-scrollbar { 
+    width: 6px; 
+}
+
+#fullLeaderboardList::-webkit-scrollbar-track,
+.achievements-grid::-webkit-scrollbar-track { 
+    background: rgba(0, 0, 0, 0.2); 
+    border-radius: 10px; 
+}
+
+#fullLeaderboardList::-webkit-scrollbar-thumb,
+.achievements-grid::-webkit-scrollbar-thumb { 
+    background: #00d2d3; 
+    border-radius: 10px; 
+}
