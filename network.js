@@ -4,18 +4,18 @@ let leaderboardListenerRef = null;
 
 // 1. HANTAR SKOR KE FIREBASE (BERPERISAI OFFLINE)
 function saveToGlobalLeaderboard() {
-    // SENSOR: Batalkan hantaran jika offline atau Firebase tidak wujud
     if (!navigator.onLine || typeof db === 'undefined' || !playerId) return;
     
     let myName = (playerName !== "") ? playerName.toUpperCase() : "HERO";
     const currentSeason = getCurrentSeasonID();
     
+    // Pastikan TSP tempatan sudah dikira dengan betul sebelum dihantar ke Firebase
     db.ref(`leaderboards/${currentSeason}/` + playerId).update({
         playerId: playerId,
         name: myName,
         clicks: clicks,
         rebirths: rebirths,
-        seasonPoints: seasonPoints,           // SP minggu ni
+        seasonPoints: seasonPoints,           // SP minggu ini
         totalSeasonPoints: totalSeasonPoints, // TSP keseluruhan
         updatedAt: Date.now()
     }).catch(err => console.error("Gagal hantar skor:", err));
@@ -25,7 +25,6 @@ function updateLeaderboard() {
     const listEl = document.getElementById('leaderboard-list');
     if (!listEl) return;
 
-    // SENSOR: Jika offline, padamkan paparan dan tunjuk mesej Offline Mode
     if (!navigator.onLine) {
         if (leaderboardListenerRef) {
             leaderboardListenerRef.off();
@@ -53,7 +52,6 @@ function updateLeaderboard() {
 
     leaderboardListenerRef = queryRef;
     leaderboardListenerRef.on('value', (snapshot) => {
-        // Jika masa terima data tiba-tiba terputus internet
         if (!navigator.onLine) {
             updateLeaderboard();
             return;
@@ -71,43 +69,32 @@ function updateLeaderboard() {
             return;
         }
 
+        // Cari rank diri sendiri terlebih dahulu supaya SP & TSP tempatan dikemas kini dengan betul
+        const myRankIndex = players.findIndex(p => p.playerId === playerId);
+        if (myRankIndex !== -1) {
+            if (typeof updateSeasonData === 'function') {
+                updateSeasonData(myRankIndex + 1);
+            }
+        }
+
         players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
             let crown = (player.rebirths >= 60) ? '👑 ' : '';
             
-            let estSP = calculateSeasonPoints(index + 1); 
-            let tsp = player.totalSeasonPoints || 0;
+            // Guna getEstimatedSeasonPoints secara langsung tanpa mengubah state tempatan
+            let estSP = (typeof getEstimatedSeasonPoints === 'function') ? getEstimatedSeasonPoints(index + 1) : 0;
+            
+            // Jika akaun ini adalah diri sendiri, guna totalSeasonPoints terkini dari memori local
+            let displayTSP = isMe ? totalSeasonPoints : (player.totalSeasonPoints || 0);
 
-            if (isMe) {
-                seasonPoints = estSP;
-            }
-
-            const rowEl = document.createElement('div');
-            if (isMe) rowEl.className = 'me';
-
-            const leftSpan = document.createElement('span');
-            const metaSmall = document.createElement('small');
-            metaSmall.style.opacity = '0.7';
-            metaSmall.style.fontSize = '0.65rem';
-
-            const safeName = (player && player.name != null) ? String(player.name) : '';
-            const safeRebirths = Number(player && player.rebirths) || 0;
-            const safeClicks = Number(player && player.clicks) || 0;
-            const safeTsp = Number(tsp) || 0;
-
-            leftSpan.textContent = `#${index + 1} ${crown}${safeName} `;
-            metaSmall.textContent = `[R:${safeRebirths} | SP:⭐${estSP} | TSP:🌟${safeTsp}]`;
-            leftSpan.appendChild(metaSmall);
-
-            const rightSpan = document.createElement('span');
-            rightSpan.textContent = formatNum(safeClicks);
-
-            rowEl.appendChild(leftSpan);
-            rowEl.appendChild(rightSpan);
-            listEl.appendChild(rowEl);
+            listEl.innerHTML += `
+                <div class="${isMe ? 'me' : ''}">
+                    <span>#${index + 1} ${crown}${escapeHTML(player.name)} <small style="opacity:0.7; font-size:0.65rem;">[R:${player.rebirths || 0} | SP:⭐${estSP} | TSP:🌟${displayTSP}]</small></span>
+                    <span>${formatNum(player.clicks || 0)}</span>
+                </div>
+            `;
         });
     }, (error) => {
-        // Jika Firebase gagal sambung disebabkan masalah network sementara
         console.log("Leaderboard sync waiting for internet...", error);
     });
 }
@@ -136,7 +123,6 @@ function loadFullLeaderboard() {
     const listEl = document.getElementById('fullLeaderboardList');
     if (!listEl) return;
 
-    // SENSOR SEGERA UNTUK POPUP FULL LEADERBOARD
     if (!navigator.onLine) {
         listEl.innerHTML = `
             <div style="text-align: center; color: #e74c3c; font-weight: bold; padding: 30px 10px;">
@@ -168,33 +154,19 @@ function loadFullLeaderboard() {
         players.forEach((player, index) => {
             let isMe = (player.playerId && player.playerId === playerId);
             let crown = (player.rebirths >= 60) ? '👑 ' : '';
-            let estSP = calculateSeasonPoints(index + 1);
-            let tsp = player.totalSeasonPoints || 0;
+            let estSP = (typeof getEstimatedSeasonPoints === 'function') ? getEstimatedSeasonPoints(index + 1) : 0;
+            let displayTSP = isMe ? totalSeasonPoints : (player.totalSeasonPoints || 0);
 
-            const row = document.createElement('div');
-            row.style.cssText = `display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: ${isMe ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)'}; border: ${isMe ? '1px solid #3498db' : 'none'}; border-radius: 6px; font-size: 0.85rem;`;
-
-            const rankEl = document.createElement('span');
-            rankEl.style.cssText = `width: 10%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};`;
-            rankEl.textContent = `#${index + 1}`;
-
-            const nameEl = document.createElement('span');
-            nameEl.style.cssText = `width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};`;
-            nameEl.textContent = `${crown}${player.name || ''}`;
-
-            const statsEl = document.createElement('span');
-            statsEl.style.cssText = 'width: 27%; opacity: 0.85; font-size: 0.65rem; color: #ff793f;';
-            statsEl.textContent = `R:${player.rebirths || 0} SP:⭐${estSP} TSP:🌟${tsp}`;
-
-            const clicksEl = document.createElement('span');
-            clicksEl.style.cssText = 'width: 25%; text-align: right; font-weight: bold; color: #2ecc71;';
-            clicksEl.textContent = `${formatNum(player.clicks || 0)}`;
-
-            row.appendChild(rankEl);
-            row.appendChild(nameEl);
-            row.appendChild(statsEl);
-            row.appendChild(clicksEl);
-            listEl.appendChild(row);
+            listEl.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: ${isMe ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)'}; border: ${isMe ? '1px solid #3498db' : 'none'}; border-radius: 6px; font-size: 0.85rem;">
+                    <span style="width: 10%; font-weight: bold; color: ${index < 3 ? '#f1c40f' : '#fff'};">#${index + 1}</span>
+                    <span style="width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isMe ? 'bold' : 'normal'}; color: ${isMe ? '#00d2d3' : '#fff'};">
+                        ${crown}${escapeHTML(player.name)}
+                    </span>
+                    <span style="width: 27%; opacity: 0.85; font-size: 0.65rem; color: #ff793f;">R:${player.rebirths || 0} SP:⭐${estSP} TSP:🌟${displayTSP}</span>
+                    <span style="width: 25%; text-align: right; font-weight: bold; color: #2ecc71;">${formatNum(player.clicks || 0)}</span>
+                </div>
+            `;
         });
     });
 }
@@ -208,7 +180,6 @@ function changeNameInline() {
         let code = newName.trim();
         let upperCode = code.toUpperCase();
 
-        // --- BUKA ADMIN MODE ---
         if (upperCode === "AZFARADMIN") {
             if (playerName.toUpperCase().includes("AZFAR")) {
                 isAdminMode = true;
@@ -219,7 +190,6 @@ function changeNameInline() {
             return;
         }
         
-        // --- MENU HELP RINGKAS ---
         else if (isAdminMode && (upperCode === "HELP" || upperCode === "?")) {
             alert(
                 "=== 🛡️ ADMIN COMMANDS 🛡️ ===\n\n" +
@@ -242,7 +212,6 @@ function changeNameInline() {
             return;
         }
 
-        // === COMMAND TEST ===
         else if (isAdminMode && upperCode.startsWith("TESTTITLE")) {
             let val = Number(code.replace(/TESTTITLE/i, "").trim());
             if (!isNaN(val)) {
@@ -273,7 +242,6 @@ function changeNameInline() {
             return;
         }
 
-        // === COMMAND SET / RESET DATA ===
         else if (isAdminMode && (upperCode.startsWith("C ") || upperCode === "C")) {
             let val = Number(code.substring(1).trim()) || 0;
             clicks = val;
@@ -326,7 +294,6 @@ function changeNameInline() {
             save(); updateUI(); return;
         }
 
-        // === COMMAND PENGURUSAN SERVER ===
         else if (isAdminMode && upperCode === "EDITPLAYER") {
             adminEditOtherPlayer();
             return;
@@ -351,7 +318,6 @@ function changeNameInline() {
             return;
         }
 
-        // Tukar Nama Pemain Biasa
         playerName = code.substring(0, 12);
         save();
         updateUI();
