@@ -69,15 +69,11 @@ function calculateSeasonPoints(rank) {
 }
 
 function updatePower() {
-    // 🔴 KOD LAMA: Math.pow(2.8, rebirths) -> Terlalu laju
-    // ✅ KOD BAHARU: Turunkan multiplier dari 2.8 ke 1.5
     let rebirthMult = Math.pow(1.5, rebirths); 
     
     let effectiveItemPower = itemPower * (rebirths + 1);
     clickPower = (basePower + effectiveItemPower) * rebirthMult;
     
-    // 🔴 KOD LAMA: Math.pow(1.8, rebirths)
-    // ✅ KOD BAHARU: Naikkan kos scaling dari 1.8 ke 2.2
     rebirthCost = Math.floor(100 * Math.pow(2.2, rebirths));
 }
 
@@ -122,33 +118,30 @@ function loadGameData() {
     let savedSeason = localStorage.getItem('activeSeason');
     let saved = JSON.parse(localStorage.getItem('dolaFinalSaveV5'));
 
-    if (saved) {
-        totalSeasonPoints = Number(saved.totalSeasonPoints) || 0;
-    }
-
-        // Mengendalikan Pertukaran Musim
+    // Mengendalikan Pertukaran Musim
     if (savedSeason && savedSeason !== currentSeason) {
         // Ambil SP terkumpul dari musim yang baru tamat
         let lastSeasonSP = Number(saved ? saved.seasonPoints : 0);
         let previousLifetimeSP = Number(localStorage.getItem('lifetimePastSP')) || 0;
         
-        // Tambah SP musim lepas ke dalam simpanan Lifetime
+        // Kira jumlah TSP terkumpul yang baharu
         let newLifetimeSP = previousLifetimeSP + lastSeasonSP;
-        localStorage.setItem('lifetimePastSP', newLifetimeSP);
-        
         let oldName = saved ? saved.playerName : "";
         
-        // Simpan perkara penting sebelum pembersihan
+        // 1. Clear LocalStorage TERLEBIH DAHULU
         localStorage.clear();
+
+        // 2. Simpan semula data penting ke LocalStorage
         localStorage.setItem('myGamePlayerId', playerId);
         localStorage.setItem('activeSeason', currentSeason);
-        localStorage.setItem('lifetimePastSP', newLifetimeSP); // Simpan semula Lifetime SP
+        localStorage.setItem('lifetimePastSP', newLifetimeSP); // ✅ Simpan Lifetime SP tanpa terpadam
         
         // Set semula nilai musim baharu
         clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
         diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
         inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
         achievementsData = {};
+        
         seasonPoints = 0;
         totalSeasonPoints = newLifetimeSP;
         
@@ -169,6 +162,12 @@ function loadGameData() {
             autoClickers = Number(saved.autoClickers) || 0;
             diamondFarms = Number(saved.diamondFarms) || 0;
             endingReached = saved.endingReached || false;
+            seasonPoints = Number(saved.seasonPoints) || 0;
+            
+            // Dapatkan TSP daripada simpanan past SP + seasonPoints
+            let pastSP = Number(localStorage.getItem('lifetimePastSP')) || 0;
+            totalSeasonPoints = pastSP + seasonPoints;
+
             if (saved.inventory) inventory = saved.inventory;
             achievementsData = saved.achievementsData || {};
 
@@ -203,7 +202,6 @@ function loadGameData() {
 }
 
 function resetGame() {
-    
     const currentSeason = getCurrentSeasonID();
 
     // 2. Padam akaun dari Firebase dulu supaya tak ada duplicate di Leaderboard
@@ -228,7 +226,6 @@ function resetGame() {
     location.reload();
 }
 
-
 function addGameLog(message, type = 'info') {
     const logBox = document.getElementById('logContent');
     if (!logBox) return;
@@ -248,7 +245,6 @@ function addGameLog(message, type = 'info') {
 
     logBox.appendChild(entry);
 
-    // Hadkan log maksimum 30 baris sahaja supaya tak lag
     if (logBox.children.length > 1000) {
         logBox.removeChild(logBox.firstChild);
     }
