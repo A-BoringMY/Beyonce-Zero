@@ -37,9 +37,35 @@ function getCurrentSeasonID() {
     return `${d.getFullYear()}_W${weekNo}`;
 }
 
-function calculateSeasonPoints(rank) {
-    if (rank >= 1 && rank <= 10) return 11 - rank; 
+// 1. Fungsi untuk mengira ramalan SP Musim Semasa berdasarkan kedudukan Leaderboard
+function getEstimatedSeasonPoints(rank) {
+    if (rank >= 1 && rank <= 10) {
+        return 11 - rank; // Rank 1 = 10 SP, Rank 10 = 1 SP
+    }
     return 0;
+}
+
+// 2. Fungsi untuk mengemas kini SP semasa dan mengira TSP (Lifetime)
+function updateSeasonData(currentRank = 0) {
+    // Kemas kini SP berdasarkan kedudukan carta semasa
+    seasonPoints = getEstimatedSeasonPoints(currentRank);
+
+    // Semak berapa banyak SP yang telah dikumpul dari musim-musim terdahulu
+    let pastSeasonPoints = Number(localStorage.getItem('lifetimePastSP')) || 0;
+
+    // TSP = SP Musim-musim Lepas + SP Musim Semasa
+    totalSeasonPoints = pastSeasonPoints + seasonPoints;
+
+    return {
+        sp: seasonPoints,
+        tsp: totalSeasonPoints
+    };
+}
+
+// 3. Kekalkan fungsi ini supaya network.js / game.js TIDAK CRASH!
+function calculateSeasonPoints(rank) {
+    updateSeasonData(rank);
+    return seasonPoints;
 }
 
 function updatePower() {
@@ -79,11 +105,16 @@ function save() {
         playerName, clicks, diamonds, basePower, itemPower, rebirthCost, rebirths, 
         diaReward, autoClickers, diamondFarms, endingReached, inventory, 
         achievementsData: achievementsData || {},
-        totalSeasonPoints: totalSeasonPoints,
+        seasonPoints: seasonPoints,          // SP Musim Semasa
+        totalSeasonPoints: totalSeasonPoints, // TSP (Lifetime)
         lastTime: Date.now() 
     };
     localStorage.setItem('dolaFinalSaveV5', JSON.stringify(data));
-    if (typeof saveToGlobalLeaderboard === 'function') saveToGlobalLeaderboard();
+    
+    // Hantar data ke Firebase/Leaderboard supaya pemain lain boleh nampak SP & TSP
+    if (typeof saveToGlobalLeaderboard === 'function') {
+        saveToGlobalLeaderboard(seasonPoints, totalSeasonPoints);
+    }
 }
 
 function loadGameData() {
@@ -95,10 +126,15 @@ function loadGameData() {
         totalSeasonPoints = Number(saved.totalSeasonPoints) || 0;
     }
 
-    // Mengendalikan Pertukaran Musim
+        // Mengendalikan Pertukaran Musim
     if (savedSeason && savedSeason !== currentSeason) {
-        let earnedSP = Number(localStorage.getItem('pendingSeasonSP')) || 0;
-        totalSeasonPoints += earnedSP;
+        // Ambil SP terkumpul dari musim yang baru tamat
+        let lastSeasonSP = Number(saved ? saved.seasonPoints : 0);
+        let previousLifetimeSP = Number(localStorage.getItem('lifetimePastSP')) || 0;
+        
+        // Tambah SP musim lepas ke dalam simpanan Lifetime
+        let newLifetimeSP = previousLifetimeSP + lastSeasonSP;
+        localStorage.setItem('lifetimePastSP', newLifetimeSP);
         
         let oldName = saved ? saved.playerName : "";
         
@@ -106,11 +142,15 @@ function loadGameData() {
         localStorage.clear();
         localStorage.setItem('myGamePlayerId', playerId);
         localStorage.setItem('activeSeason', currentSeason);
+        localStorage.setItem('lifetimePastSP', newLifetimeSP); // Simpan semula Lifetime SP
         
+        // Set semula nilai musim baharu
         clicks = 0; diamonds = 0; basePower = 1; itemPower = 0; rebirths = 0;
         diaReward = 1; autoClickers = 0; diamondFarms = 0; endingReached = false;
         inventory = { sword: false, wand: false, glove: false, laser: false, quantum: false, void: false };
         achievementsData = {};
+        seasonPoints = 0;
+        totalSeasonPoints = newLifetimeSP;
         
         if (oldName !== "") playerName = oldName;
         save();
